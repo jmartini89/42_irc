@@ -1,7 +1,7 @@
 NAME = irc
 CC = clang++
 CFLAGS = $(CSTD) $(CWARN) $(HEADERS)
-CSTD = -std=c++98 -pedantic
+CSTD = -std=c++98 #-pedantic
 CWARN = -Wall -Werror -Wextra
 HEADERS = -I./inc
 DEBUG = -g
@@ -14,7 +14,7 @@ BINDIR = bin
 LIBDIR = lib
 
 SOURCES = $(shell find $(SRCDIR) -name "*.cpp")
-OBJECTS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
+OBJECTS = $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
 TARGET = $(BINDIR)/$(NAME)
 HEADERS_UPD = $(shell find inc -name "*.hpp")
 
@@ -43,7 +43,7 @@ $(TARGET) : $(OBJECTS)
 	@echo "\033[32m"$@" compiled successfully\033[0m"
 
 #Compile
-$(OBJECTS) : $(OBJDIR)/%.o : $(SRCDIR)/%.c $(HEADERS_UPD)
+$(OBJECTS) : $(OBJDIR)/%.o : $(SRCDIR)/%.cpp $(HEADERS_UPD)
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo "\033[34m"$<" compiled successfully\033[0m"
