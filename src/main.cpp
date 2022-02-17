@@ -11,7 +11,7 @@ main(int argc, char **argv) {
 	Server	server(std::atoi(argv[1]), argv[2]);
 
 	server.run();
-	} catch(std::exception e) { std::cout << e.what() << std::endl; }
+	} catch(std::runtime_error &e) { std::cout << e.what() << std::endl; }
 
 	return EXIT_SUCCESS;
 }

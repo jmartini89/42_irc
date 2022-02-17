@@ -1,6 +1,7 @@
 #ifndef Server_HPP
 #define Server_HPP
 
+#include "Client.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -10,10 +11,12 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdexcept>
 
 #define BACKLOG_IRC 8
 
@@ -37,7 +40,12 @@ class Server
 		//
 		std::vector<t_kevent>	_monitorEvent;
 		std::vector<t_kevent>	_triggerEvent;
+        std::vector<Client>     _client;
+
 		int				_kQueue;
+
+		void	_addClient();
+
 };
 
 #endif
