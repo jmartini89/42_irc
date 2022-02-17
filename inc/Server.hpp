@@ -4,6 +4,7 @@
 #include "Client.hpp"
 #include <vector>
 #include <string>
+#include <list>
 #include <iostream>
 
 #include <fcntl.h>
@@ -40,11 +41,14 @@ class Server
 		//
 		std::vector<t_kevent>	_monitorEvent;
 		std::vector<t_kevent>	_triggerEvent;
-        std::vector<Client>     _client;
+		std::vector<Client *>	_client;
 
 		int				_kQueue;
 
 		void	_addClient();
+		void	_constructErr(std::string errstr);
+		void	_eventHandler(int eventFd);
+		void	_test();
 
 };
 
