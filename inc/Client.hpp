@@ -5,20 +5,20 @@
 
 class Client
 {
-    private:
-        int                 _fdSocket;
-       	struct sockaddr_in  _address;
+	private:
+		int                 _fdSocket;
+	   	struct sockaddr_in  _address;
 
-    public:
-        Client(/* args */);
-        ~Client();
+	public:
+		Client(/* args */);
+		~Client();
 
-        // Getters
-        int                 getFdSocket() const;
-        struct sockaddr_in  *getAddressPointer();
-        
-        //Setters
-        void                setFdSocket(int fdSocket);
+		// Getters
+		int                 getFdSocket() const;
+		struct sockaddr_in  *getAddressPointer();
+		
+		//Setters
+		void                setFdSocket(int fdSocket);
 
 };
 
