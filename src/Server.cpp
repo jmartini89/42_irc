@@ -1,5 +1,6 @@
 #include "Server.hpp"
-
+#include "Reply.hpp"
+#include "Commands.hpp"
 
 Server::Server(const unsigned int port, std::string password)
 : _password(password) {
@@ -39,22 +40,6 @@ Server::~Server()
 }
 
 void
-Server::_test() {
-	Client *client = new Client();
-
-	this->_client.push_back(client);
-	client->setFdSocket(STDIN_FILENO);
-
-
-	EV_SET(&this->_monitorEvent[0], client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent function failed");
-
-	std::cout << "TEST " << client->getFdSocket() << " has connected" << std::endl;
-
-}
-
-void
 Server::run()
 {
 	listen(this->_fdListen, BACKLOG_IRC);
@@ -68,8 +53,6 @@ Server::run()
 
 	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) == -1)
 		throw std::runtime_error("kevent function failed");
-
-	this->_test();
 
 	while(true)
 	{
@@ -94,18 +77,6 @@ Server::run()
 				_eventHandler(eventFd);
 		}
 	}
-}
-
-void
-Server::_eventHandler(int eventFd)
-{
-	bzero(this->_buffer, sizeof(this->_buffer));
-	size_t bytes_read = read(eventFd, this->_buffer, sizeof(this->_buffer)); // RECV
-	std::cout << "From FD " << eventFd << ": " << this->_buffer;
-
-	for (int i = 0; i < this->_client.size(); i++)
-		if (eventFd != this->_client[i]->getFdSocket())
-			send(this->_client[i]->getFdSocket(), this->_buffer, sizeof(this->_buffer), 0);
 }
 
 void	Server::_addClient()
@@ -134,4 +105,74 @@ void	Server::_addClient()
 		throw std::runtime_error("kevent function failed");
 
 	std::cout << "Client " << fdClient << " has connected" << std::endl;
+}
+
+void
+Server::_eventHandler(int eventFd)
+{
+	bzero(this->_buffer, sizeof(this->_buffer));
+	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
+
+	std::list<Message> msgList = this->_parseMsg(this->_buffer);
+
+	for (std::list<Message>::iterator it = msgList.begin(); it != msgList.end(); it++) {
+		std::cout << (*it).cmd << std::endl;
+		for (int i = 0; i < (*it).parameters.size(); i++)
+			std::cout << (*it).parameters[i] << std::endl;
+	}
+	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
+	// std::cout << send(eventFd, test, 31, 0) << std::endl;
+}
+
+static std::string
+ltrim(const std::string &s)
+{
+	size_t start = s.find_first_not_of(' ');
+	return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+std::vector<std::string>
+Server::_split(std::string str, char delimeter) const {
+
+	std::vector<std::string> ret;
+	std::string word;
+
+	for(int i = 0; i < str.size(); i += word.size() + 1)
+	{
+		size_t	posSpace = str.find(delimeter, i + 1);
+		if (posSpace == -1) posSpace = str.size();
+
+		word = str.substr(i, posSpace - i);
+		if (word.size() == 0) break;
+
+		word = ltrim(word);
+		if (word.size()) ret.push_back(word);
+	}
+
+	return ret;
+}
+
+
+std::list<Message>
+Server::_parseMsg(std::string buffer) {
+
+	std::list<Message> msgList;
+	std::vector<std::string> message = this->_split(buffer, '\n');
+
+	for (int i = 0; i < message.size(); i++) {
+		struct Message msg;
+		std::vector<std::string> msgSplit = this->_split(message[i], ' ');
+		// std::cout << "size: " << msgSplit[0].size() << "  " << msgSplit[0] << std::endl;
+		if (!msgSplit[0].compare("NICK")) msg.cmd = NICK;
+		else if (!msgSplit[0].compare("USER")) msg.cmd = USER;
+		else if (!msgSplit[0].compare("JOIN")) msg.cmd = JOIN;
+		else if (!msgSplit[0].compare("PRVMSG")) msg.cmd = PRVMSG;
+		// else throw std::runtime_error("porcaddio");
+
+		msgSplit.erase(msgSplit.begin());
+		msg.parameters = msgSplit;
+		msgList.push_back(msg);
+	}
+
+	return msgList;
 }

@@ -6,19 +6,21 @@
 class Client
 {
 	private:
-		int                 _fdSocket;
-	   	struct sockaddr_in  _address;
+		int					_fdSocket;
+		struct sockaddr_in	_address;
+
+		int					_userMode;
 
 	public:
 		Client(/* args */);
 		~Client();
 
 		// Getters
-		int                 getFdSocket() const;
-		struct sockaddr_in  *getAddressPointer();
+		int					getFdSocket() const;
+		struct sockaddr_in	*getAddressPointer();
 		
 		//Setters
-		void                setFdSocket(int fdSocket);
+		void				setFdSocket(int fdSocket);
 
 };
 

@@ -23,6 +23,12 @@
 
 typedef struct kevent t_kevent;
 
+struct Message
+{
+	int							cmd;
+	std::vector<std::string>	parameters;
+};
+
 class Server
 {
 	public:
@@ -47,8 +53,16 @@ class Server
 
 		void	_addClient();
 		void	_constructErr(std::string errstr);
+
+		//
 		void	_eventHandler(int eventFd);
-		void	_test();
+		std::list<Message>	_parseMsg(std::string msg);
+		void	_userCmd();
+		void	_nickCmd();
+		void	_joinCmd();
+		void	_prvMsgCmd();
+
+		std::vector<std::string>	_split(std::string str, char delimeter) const;
 
 };
 
