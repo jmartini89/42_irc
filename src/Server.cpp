@@ -1,6 +1,8 @@
 #include "Server.hpp"
 #include "Reply.hpp"
 #include "Commands.hpp"
+#include <algorithm>
+
 
 Server::Server(const unsigned int port, std::string password)
 : _password(password) {
@@ -114,12 +116,12 @@ Server::_eventHandler(int eventFd)
 	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
 
 	std::list<Message> msgList = this->_parseMsg(this->_buffer);
+	MessageHandler msgHandler(msgList);
+	std::cout << msgHandler;
 
-	for (std::list<Message>::iterator it = msgList.begin(); it != msgList.end(); it++) {
-		std::cout << (*it).cmd << std::endl;
-		for (int i = 0; i < (*it).parameters.size(); i++)
-			std::cout << (*it).parameters[i] << std::endl;
-	}
+	//looping through msgList applying the handleMsg function to every Message
+	for_each (msgList.begin(), msgList.end(), msgHandler);
+
 	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
 	// std::cout << send(eventFd, test, 31, 0) << std::endl;
 }

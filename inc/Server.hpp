@@ -6,7 +6,7 @@
 #include <string>
 #include <list>
 #include <iostream>
-
+#include "MessageHandler.hpp"
 #include <fcntl.h>
 
 #include <sys/types.h>
@@ -22,12 +22,6 @@
 #define BACKLOG_IRC 8
 
 typedef struct kevent t_kevent;
-
-struct Message
-{
-	int							cmd;
-	std::vector<std::string>	parameters;
-};
 
 class Server
 {
@@ -57,10 +51,6 @@ class Server
 		//
 		void	_eventHandler(int eventFd);
 		std::list<Message>	_parseMsg(std::string msg);
-		void	_userCmd();
-		void	_nickCmd();
-		void	_joinCmd();
-		void	_prvMsgCmd();
 
 		std::vector<std::string>	_split(std::string str, char delimeter) const;
 
