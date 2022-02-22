@@ -25,7 +25,7 @@ struct Message
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message> msgList, Client * client);
+		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
 		~MessageHandler();
 		void	handleMsg(struct Message msg);
 		void	operator()(struct Message msg);
@@ -34,12 +34,13 @@ class MessageHandler
 		std::list<Message> *getMsgList();
 
 	private :
-		std::list<Message>	_msgList;
-		Client *			_client;
-		void	_userCmd();
-		void	_nickCmd();
-		void	_joinCmd();
-		void	_prvMsgCmd();
+		std::vector<Client *>	_clientVector;
+		Client *					_client;
+		std::list<Message>			_msgList;
+		void	_userCmd(struct Message msg);
+		void	_nickCmd(struct Message msg);
+		void	_joinCmd(struct Message msg);
+		void	_prvMsgCmd(struct Message msg);
 };
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh);

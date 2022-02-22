@@ -36,3 +36,10 @@ Client::operator== (const int eventFd) const
 	if (this->_fdSocket == eventFd) return true;
 	return false;
 }
+
+bool
+Client::operator== (const std::string nick) const
+{
+	if (this->_nick == nick) return true;
+	return false;
+}

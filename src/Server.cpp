@@ -112,7 +112,7 @@ Server::_eventClientHandler(int eventFd)
 	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
 
 	std::list<Message> msgList = MessageParser::parseMsg(this->_buffer);
-	MessageHandler msgHandler(msgList, this->findClient(eventFd));
+	MessageHandler msgHandler(msgList, this->findClient(eventFd), this->_client);
 	std::cout << msgHandler;
 
 	//looping through msgList applying the handleMsg function to every Message

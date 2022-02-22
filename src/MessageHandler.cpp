@@ -1,10 +1,11 @@
 #include "MessageHandler.hpp"
 #include "Client.hpp"
 
-MessageHandler::MessageHandler(std::list<Message> msgList, Client * client)
+MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector)
 {
 	this->_msgList = msgList;
 	this->_client = client;
+	this->_clientVector = clientVector;
 }
 
 MessageHandler::~MessageHandler(){};
@@ -25,28 +26,34 @@ void MessageHandler::handleMsg(struct Message msg)
 	switch(msg.cmd)
 	{
 		case NICK:
-			_nickCmd(); break;
+			_nickCmd(msg); break;
 		case USER:
-			_nickCmd(); break;
+			_userCmd(msg); break;
 		case JOIN:
-			_joinCmd(); break;
+			_joinCmd(msg); break;
 		case PRVMSG:
-			_prvMsgCmd(); break;
+			_prvMsgCmd(msg); break;
 		default:
 			std::cerr << "Message handler function not found" << std::endl;
 	}
 }
 
-void	MessageHandler::_userCmd()
+void MessageHandler::_nickCmd(struct Message msg)
+{
+	if (msg.parameters[0].size() == 0) return; // REPLY ERROR 431
+
+	for (int i = 0; i < this->_clientVector.size(); i++)
+		if (msg.parameters[0] == this->_clientVector[i]->getFdSocket())
+			return this->_clientVector[i];
+}
+
+void MessageHandler::_userCmd(struct Message msg)
 {}
 
-void	MessageHandler::_nickCmd()
+void MessageHandler::_joinCmd(struct Message msg)
 {}
 
-void	MessageHandler::_joinCmd()
-{}
-
-void	MessageHandler::_prvMsgCmd()
+void MessageHandler::_prvMsgCmd(struct Message msg)
 {}
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
