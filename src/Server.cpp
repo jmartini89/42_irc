@@ -1,6 +1,5 @@
 #include "Server.hpp"
 
-
 Server::Server(const unsigned int port, std::string password)
 : _password(password) {
 
@@ -39,22 +38,6 @@ Server::~Server()
 }
 
 void
-Server::_test() {
-	Client *client = new Client();
-
-	this->_client.push_back(client);
-	client->setFdSocket(STDIN_FILENO);
-
-
-	EV_SET(&this->_monitorEvent[0], client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent function failed");
-
-	std::cout << "TEST " << client->getFdSocket() << " has connected" << std::endl;
-
-}
-
-void
 Server::run()
 {
 	listen(this->_fdListen, BACKLOG_IRC);
@@ -68,8 +51,6 @@ Server::run()
 
 	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) == -1)
 		throw std::runtime_error("kevent function failed");
-
-	this->_test();
 
 	while(true)
 	{
@@ -91,21 +72,9 @@ Server::run()
 				_addClient();
 
 			else if (this->_triggerEvent[i].filter & EVFILT_READ)
-				_eventHandler(eventFd);
+				_eventClientHandler(eventFd);
 		}
 	}
-}
-
-void
-Server::_eventHandler(int eventFd)
-{
-	bzero(this->_buffer, sizeof(this->_buffer));
-	size_t bytes_read = read(eventFd, this->_buffer, sizeof(this->_buffer)); // RECV
-	std::cout << "From FD " << eventFd << ": " << this->_buffer;
-
-	for (int i = 0; i < this->_client.size(); i++)
-		if (eventFd != this->_client[i]->getFdSocket())
-			send(this->_client[i]->getFdSocket(), this->_buffer, sizeof(this->_buffer), 0);
 }
 
 void	Server::_addClient()
@@ -134,4 +103,27 @@ void	Server::_addClient()
 		throw std::runtime_error("kevent function failed");
 
 	std::cout << "Client " << fdClient << " has connected" << std::endl;
+}
+
+void
+Server::_eventClientHandler(int eventFd)
+{
+	bzero(this->_buffer, sizeof(this->_buffer));
+	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
+
+	std::list<Message> msgList = MessageParser::parseMsg(this->_buffer);
+	MessageHandler msgHandler(msgList, this->findClient(eventFd), this->_client);
+	std::cout << msgHandler;
+
+	//looping through msgList applying the handleMsg function to every Message
+	for_each (msgList.begin(), msgList.end(), msgHandler);
+}
+
+Client *
+Server::findClient(int eventFd)
+{
+	for (int i = 0; i < this->_client.size(); i++)
+		if (eventFd == this->_client[i]->getFdSocket())
+			return this->_client[i];
+	throw std::runtime_error("findClient: client not found");
 }
