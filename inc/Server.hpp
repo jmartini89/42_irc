@@ -49,10 +49,10 @@ class Server
 		void	_constructErr(std::string errstr);
 
 		//
-		void	_eventHandler(int eventFd);
+		void	_eventClientHandler(int eventFd);
 		std::list<Message>	_parseMsg(std::string msg);
 
-		std::vector<std::string>	_split(std::string str, char delimeter) const;
+		std::vector<std::string>	_split(std::string str, std::string delimeter) const;
 
 };
 

@@ -15,6 +15,7 @@ enum Commands {
 
 struct Message 
 {
+	Message() : cmd(UNDEFINED) {};
 	int							cmd;
 	std::vector<std::string>	parameters;
 };
@@ -24,8 +25,8 @@ class MessageHandler
 	public :
 		MessageHandler(std::list<Message>	msgList);
 		~MessageHandler();
-		void    handleMsg(struct Message msg);
-		void    operator()(struct Message msg);
+		void	handleMsg(struct Message msg);
+		void	operator()(struct Message msg);
 
 		//Getters
 		std::list<Message> *getMsgList();

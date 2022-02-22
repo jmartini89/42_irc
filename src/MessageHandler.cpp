@@ -31,7 +31,7 @@ void MessageHandler::handleMsg(struct Message msg)
 		case PRVMSG:
 			_prvMsgCmd(); break;
 		default:
-			throw std::runtime_error("Message handler function not found");
+			std::cerr << "Message handler function not found" << std::endl;
 	}
 }
 

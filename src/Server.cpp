@@ -75,7 +75,7 @@ Server::run()
 				_addClient();
 
 			else if (this->_triggerEvent[i].filter & EVFILT_READ)
-				_eventHandler(eventFd);
+				_eventClientHandler(eventFd);
 		}
 	}
 }
@@ -109,7 +109,7 @@ void	Server::_addClient()
 }
 
 void
-Server::_eventHandler(int eventFd)
+Server::_eventClientHandler(int eventFd)
 {
 	bzero(this->_buffer, sizeof(this->_buffer));
 	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
@@ -120,9 +120,6 @@ Server::_eventHandler(int eventFd)
 
 	//looping through msgList applying the handleMsg function to every Message
 	for_each (msgList.begin(), msgList.end(), msgHandler);
-
-	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
-	// std::cout << send(eventFd, test, 31, 0) << std::endl;
 }
 
 static std::string
@@ -133,14 +130,14 @@ ltrim(const std::string &s)
 }
 
 std::vector<std::string>
-Server::_split(std::string str, char delimeter) const {
+Server::_split(std::string str, std::string delimeter) const {
 
 	std::vector<std::string> ret;
 	std::string word;
 
-	for(int i = 0; i < str.size(); i += word.size() + 1)
+	for(int i = 0; i < str.size(); i += word.size() + delimeter.size())
 	{
-		size_t	posSpace = str.find(delimeter, i + 1);
+		size_t	posSpace = str.find(delimeter, i + delimeter.size());
 		if (posSpace == -1) posSpace = str.size();
 
 		word = str.substr(i, posSpace - i);
@@ -158,11 +155,11 @@ std::list<Message>
 Server::_parseMsg(std::string buffer) {
 
 	std::list<Message> msgList;
-	std::vector<std::string> message = this->_split(buffer, '\n');
+	std::vector<std::string> message = this->_split(buffer, "\r\n");
 
 	for (int i = 0; i < message.size(); i++) {
 		struct Message msg;
-		std::vector<std::string> msgSplit = this->_split(message[i], ' ');
+		std::vector<std::string> msgSplit = this->_split(message[i], " ");
 		// std::cout << "size: " << msgSplit[0].size() << "  " << msgSplit[0] << std::endl;
 		if (!msgSplit[0].compare("NICK")) msg.cmd = NICK;
 		else if (!msgSplit[0].compare("USER")) msg.cmd = USER;
