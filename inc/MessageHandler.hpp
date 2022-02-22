@@ -5,7 +5,6 @@
 #include <vector>
 #include <iostream>
 
-#include "Client.hpp"
 
 enum Commands {
 	UNDEFINED,
@@ -22,12 +21,20 @@ struct Message
 	std::vector<std::string>	parameters;
 };
 
+#include "Server.hpp"
+#include "Client.hpp"
+#include "Reply.hpp"
+
+
+
 class MessageHandler
 {
 	public :
 		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
 		~MessageHandler();
-		void	handleMsg(struct Message msg);
+		void			handleMsg(struct Message msg);
+		void		sendReply(int code);
+
 		void	operator()(struct Message msg);
 
 		//Getters

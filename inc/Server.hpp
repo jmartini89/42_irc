@@ -24,6 +24,8 @@
 #include "Reply.hpp"
 
 #define BACKLOG_IRC 8
+#define IRC_NAME std::string("42IRC")
+#define CRLF std::string("\r\n")
 
 typedef struct kevent t_kevent;
 

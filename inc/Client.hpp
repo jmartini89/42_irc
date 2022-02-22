@@ -25,11 +25,13 @@ class Client
 
 		// Getters
 		int					getFdSocket() const;
+		std::string			getNick() const;
+
 		struct sockaddr_in	*getAddressPointer();
 		
 		//Setters
 		void				setFdSocket(int fdSocket);
-
+		void				setNick(std::string nick);
 };
 
 #endif

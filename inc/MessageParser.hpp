@@ -61,7 +61,14 @@ class MessageParser
 			return msgList;
 		};
 
-
+		static bool replace(std::string& str, std::string from, std::string to)
+		{
+			size_t start = str.find(from);
+			if(start == -1)
+				return false;
+			str.replace(start, from.length(), to);
+			return true;
+		};
 };
 
 #endif

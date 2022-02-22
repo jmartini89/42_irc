@@ -18,9 +18,20 @@ struct sockaddr_in *Client::getAddressPointer()
 	return &this->_address;
 }
 
+std::string	Client::getNick() const
+{
+	return this->_nick;
+}
+
+
 void Client::setFdSocket(int fdSocket)
 {
-	_fdSocket = fdSocket;
+	this->_fdSocket = fdSocket;
+}
+
+void	Client::setNick(std::string nick)
+{
+	this->_nick = nick;
 }
 
 bool
