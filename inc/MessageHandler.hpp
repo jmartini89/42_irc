@@ -5,6 +5,8 @@
 #include <vector>
 #include <iostream>
 
+#include "Client.hpp"
+
 enum Commands {
 	UNDEFINED,
 	NICK,
@@ -23,7 +25,7 @@ struct Message
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message>	msgList);
+		MessageHandler(std::list<Message> msgList, Client * client);
 		~MessageHandler();
 		void	handleMsg(struct Message msg);
 		void	operator()(struct Message msg);
@@ -33,6 +35,7 @@ class MessageHandler
 
 	private :
 		std::list<Message>	_msgList;
+		Client *			_client;
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();

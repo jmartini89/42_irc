@@ -1,8 +1,10 @@
 #include "MessageHandler.hpp"
+#include "Client.hpp"
 
-MessageHandler::MessageHandler(std::list<Message>	msgList)
+MessageHandler::MessageHandler(std::list<Message> msgList, Client * client)
 {
 	this->_msgList = msgList;
+	this->_client = client;
 }
 
 MessageHandler::~MessageHandler(){};

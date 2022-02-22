@@ -14,6 +14,8 @@ class Client
 	public:
 		Client(/* args */);
 		~Client();
+		bool	operator== (const Client * rhs) const;
+		bool	operator== (const int eventFd) const;
 
 		// Getters
 		int					getFdSocket() const;
