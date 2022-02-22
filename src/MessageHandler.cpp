@@ -1,5 +1,4 @@
-#include "../inc/MessageHandler.hpp"
-#include "../inc/Commands.hpp"
+#include "MessageHandler.hpp"
 
 MessageHandler::MessageHandler(std::list<Message>	msgList)
 {
@@ -16,10 +15,10 @@ std::list<Message> *MessageHandler::getMsgList()
 //operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
 {
-    handleMsg(msg);
+	handleMsg(msg);
 }
 
-void    MessageHandler::handleMsg(struct Message msg)
+void MessageHandler::handleMsg(struct Message msg)
 {
 	switch(msg.cmd)
 	{
@@ -47,9 +46,6 @@ void	MessageHandler::_joinCmd()
 
 void	MessageHandler::_prvMsgCmd()
 {}
-
-
-
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
 {

@@ -5,6 +5,14 @@
 #include <vector>
 #include <iostream>
 
+enum Commands {
+	UNDEFINED,
+	NICK,
+	USER,
+	JOIN,
+	PRVMSG
+};
+
 struct Message 
 {
 	int							cmd;
@@ -16,11 +24,11 @@ class MessageHandler
 	public :
 		MessageHandler(std::list<Message>	msgList);
 		~MessageHandler();
-        void    handleMsg(struct Message msg);
-        void    operator()(struct Message msg);
+		void    handleMsg(struct Message msg);
+		void    operator()(struct Message msg);
 
-        //Getters
-        std::list<Message> *getMsgList();
+		//Getters
+		std::list<Message> *getMsgList();
 
 	private :
 		std::list<Message>	_msgList;
