@@ -40,13 +40,13 @@ void MessageHandler::handleMsg(struct Message msg)
 
 void MessageHandler::_nickCmd(struct Message msg)
 {
-	if (msg.parameters[0].size() == 0) return; // REPLY ERROR 431
-
+	if (msg.parameters.empty())
+		return sendReply(ERR_NONICKNAMEGIVEN);
 	for (int i = 0; i < this->_clientVector.size(); i++)
 		if (msg.parameters[0] == this->_clientVector[i]->getNick())
-			return ;//REPLY ERROR ERR_NICKNAMEINUSE
+			return sendReply(ERR_NICKNAMEINUSE);
 	this->_client->setNick(msg.parameters[0]);
-	sendReply(RPL_WELCOME);
+	sendReply(RPL_WELCOME); //send this only after USER message
 }
 
 void MessageHandler::_userCmd(struct Message msg)
@@ -89,10 +89,12 @@ void		MessageHandler::sendReply(int code)
 
 	reply += Reply::getReply(code);
 	MessageParser::replace(reply, "<nick>", this->_client->getNick());
+	MessageParser::replace(reply, "<user>", this->_client->getUser());
+	MessageParser::replace(reply, "<host>", this->_client->getRealName());
+	MessageParser::replace(reply, "<servername>", IRC_NAME);
 
 	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
 	reply += CRLF;
-	std::cout << reply << std::endl;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
 }
 

@@ -26,7 +26,8 @@ class Client
 		// Getters
 		int					getFdSocket() const;
 		std::string			getNick() const;
-
+		std::string			getUser() const;
+		std::string			getRealName() const;
 		struct sockaddr_in	*getAddressPointer();
 		
 		//Setters

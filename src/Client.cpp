@@ -23,6 +23,17 @@ std::string	Client::getNick() const
 	return this->_nick;
 }
 
+std::string		Client::getUser() const
+{
+	return this->_user;
+
+}
+
+std::string		Client::getRealName() const
+{
+	return this->_realName;
+}
+
 
 void Client::setFdSocket(int fdSocket)
 {
