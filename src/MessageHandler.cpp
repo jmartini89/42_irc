@@ -18,35 +18,36 @@ std::list<Message> *MessageHandler::getMsgList()
 //operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
 {
-	handleMsg(msg);
+	this->_message = msg;
+	handleMsg();
 }
 
-void MessageHandler::handleMsg(struct Message msg)
+void MessageHandler::handleMsg()
 {
-	switch(msg.cmd)
+	switch(this->_message.cmd)
 	{
 		case NICK:
-			_nickCmd(msg); break;
+			_nickCmd(); break;
 		case USER:
-			_userCmd(msg); break;
+			_userCmd(); break;
 		case JOIN:
-			_joinCmd(msg); break;
+			_joinCmd(); break;
 		case PRVMSG:
-			_prvMsgCmd(msg); break;
+			_prvMsgCmd(); break;
 		default:
-			std::cerr << "Message handler function not found" << std::endl;
+			sendReply(ERR_UNKNOWNCOMMAND);
 	}
 }
 
-void MessageHandler::_nickCmd(struct Message msg)
+void MessageHandler::_nickCmd()
 {
-	if (msg.parameters.empty()) return sendReply(ERR_NONICKNAMEGIVEN);
+	if (this->_message.parameters.empty()) return sendReply(ERR_NONICKNAMEGIVEN);
 
 	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (msg.parameters[0] == this->_clientVector[i]->getNick())
+		if (this->_message.parameters[0] == this->_clientVector[i]->getNick())
 			return sendReply(ERR_NICKNAMEINUSE);
 
-	this->_client->setNick(msg.parameters[0]);
+	this->_client->setNick(this->_message.parameters[0]);
 
 	if (!this->_client->isLogged() && this->_client->isRegistered())	// WELCOME
 	{
@@ -57,27 +58,27 @@ void MessageHandler::_nickCmd(struct Message msg)
 	else {}																// SET
 }
 
-void MessageHandler::_userCmd(struct Message msg)
+void MessageHandler::_userCmd()
 {
-	if (msg.parameters.size() < 4) return sendReply(ERR_NEEDMOREPARAMS);
+	if (this->_message.parameters.size() < 4) return sendReply(ERR_NEEDMOREPARAMS);
 	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
 
-	this->_client->setUser(msg.parameters[0]);
+	this->_client->setUser(this->_message.parameters[0]);
 
 
 	std::string realName;
-	if (msg.parameters[3][0] == ':') msg.parameters[3].erase(0, 1);
-	for (int i = 3; i < msg.parameters.size(); i++)
-		realName += msg.parameters[i];
+	if (this->_message.parameters[3][0] == ':') this->_message.parameters[3].erase(0, 1);
+	for (int i = 3; i < this->_message.parameters.size(); i++)
+		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
 	if (!this->_client->getNick().empty()) return sendReply(RPL_WELCOME);
 }
 
-void MessageHandler::_joinCmd(struct Message msg)
+void MessageHandler::_joinCmd()
 {}
 
-void MessageHandler::_prvMsgCmd(struct Message msg)
+void MessageHandler::_prvMsgCmd()
 {}
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
@@ -97,7 +98,8 @@ std::ostream& operator<<(std::ostream& os, const Message& m)
 	return os;
 }
 
-void		MessageHandler::sendReply(int code)
+void
+MessageHandler::sendReply(int code)
 {
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -111,8 +113,8 @@ void		MessageHandler::sendReply(int code)
 	MessageParser::replace(reply, "<user>", this->_client->getUser());
 	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
+	MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
 
-	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
 	reply += CRLF;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
 }

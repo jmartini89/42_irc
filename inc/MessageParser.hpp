@@ -54,7 +54,8 @@ class MessageParser
 				else if (!msgSplit[0].compare("PRVMSG")) msg.cmd = PRVMSG;
 				else msg.cmd = UNDEFINED;
 
-				msgSplit.erase(msgSplit.begin());
+				if (msg.cmd != UNDEFINED)
+					msgSplit.erase(msgSplit.begin());
 				msg.parameters = msgSplit;
 				msgList.push_back(msg);
 			}

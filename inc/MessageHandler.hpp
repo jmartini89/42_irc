@@ -30,25 +30,27 @@ struct Message
 
 class MessageHandler
 {
-	public :
+	public : // REDUNDANT MSGLIST CONSTRUCTION
 		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
 		~MessageHandler();
-		void			handleMsg(struct Message msg);
-		void		sendReply(int code);
 
 		void	operator()(struct Message msg);
 
+		void	handleMsg();
+		void	sendReply(int code);
+
 		//Getters
-		std::list<Message> *getMsgList();
+		std::list<Message> *getMsgList(); // REDUNDANT
 
 	private :
 		std::vector<Client *>	_clientVector;
-		Client *					_client;
-		std::list<Message>			_msgList;
-		void	_userCmd(struct Message msg);
-		void	_nickCmd(struct Message msg);
-		void	_joinCmd(struct Message msg);
-		void	_prvMsgCmd(struct Message msg);
+		Client *				_client;
+		std::list<Message>		_msgList; // REDUNDANT
+		Message					_message;
+		void	_userCmd();
+		void	_nickCmd();
+		void	_joinCmd();
+		void	_prvMsgCmd();
 };
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh);
