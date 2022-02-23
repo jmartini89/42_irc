@@ -59,7 +59,13 @@ void MessageHandler::_nickCmd(struct Message msg)
 
 void MessageHandler::_userCmd(struct Message msg)
 {
-	
+	if (msg.parameters.size() < 4) return sendReply(ERR_NEEDMOREPARAMS);
+	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
+
+	this->_client->setUser(msg.parameters[0]);
+	this->_client->setRealName(msg.parameters[3]);
+
+	if (this->_client->isLogged()) return sendReply(RPL_WELCOME);
 }
 
 void MessageHandler::_joinCmd(struct Message msg)

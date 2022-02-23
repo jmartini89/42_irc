@@ -64,7 +64,8 @@ Server::run()
 
 			if (this->_triggerEvent[i].flags & EV_EOF)
 			{
-				std::cout << "Client has disconnected" << std::endl;
+				// TODO : BROADCAST + (DELETE?) + ETC ...
+				std::cout << "Client " << this->findClient(eventFd)->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
 				close(eventFd);
 			}
 

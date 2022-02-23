@@ -43,6 +43,8 @@ class Client
 		void				setHostname(char * hostname);
 
 		void				setNick(std::string nick);
+		void				setUser(std::string user);
+		void				setRealName(std::string realName);
 };
 
 #endif

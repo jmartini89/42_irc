@@ -42,10 +42,16 @@ void
 Client::setFdSocket(int fdSocket) { this->_fdSocket = fdSocket; }
 
 void
+Client:: setHostname(char * hostname) { this->_hostname = hostname; }
+
+void
 Client::setNick(std::string nick) { this->_nick = nick; }
 
 void
-Client:: setHostname(char * hostname) { this->_hostname = hostname; }
+Client::setUser(std::string user) { this->_user = user; }
+
+void
+Client::setRealName(std::string realName) { this->_realName = realName; }
 
 bool
 Client::operator== (const Client * rhs) const {
