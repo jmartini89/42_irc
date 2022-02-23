@@ -40,17 +40,27 @@ void MessageHandler::handleMsg(struct Message msg)
 
 void MessageHandler::_nickCmd(struct Message msg)
 {
-	if (msg.parameters.empty())
-		return sendReply(ERR_NONICKNAMEGIVEN);
+	if (msg.parameters.empty()) return sendReply(ERR_NONICKNAMEGIVEN);
+
 	for (int i = 0; i < this->_clientVector.size(); i++)
 		if (msg.parameters[0] == this->_clientVector[i]->getNick())
 			return sendReply(ERR_NICKNAMEINUSE);
+
 	this->_client->setNick(msg.parameters[0]);
-	sendReply(RPL_WELCOME); //send this only after USER message
+
+	if (!this->_client->isLogged() && this->_client->isRegistered())	// WELCOME
+	{
+		this->_client->setLogged(true);
+		sendReply(RPL_WELCOME);
+	}
+	else if (this->_client->isRegistered()) {}							// CHANGE + BROADCAST
+	else {}																// SET
 }
 
 void MessageHandler::_userCmd(struct Message msg)
-{}
+{
+	
+}
 
 void MessageHandler::_joinCmd(struct Message msg)
 {}
@@ -78,14 +88,11 @@ std::ostream& operator<<(std::ostream& os, const Message& m)
 void		MessageHandler::sendReply(int code)
 {
 	std::string reply = ":" + IRC_NAME + " ";
-	if (code < 10)
-	{
-		reply += "00";
-		reply += code + '0'; //transform int code in the corresponding ascii
-	}
-	else
-		reply += std::to_string(code);
-	reply += " ";
+
+	std::ostringstream code_s;
+	code_s << std::setw( 3 ) << std::setfill( '0' ) << std::to_string(code);
+	reply += code_s.str();
+	reply += " " + this->_client->getNick() + " ";
 
 	reply += Reply::getReply(code);
 	MessageParser::replace(reply, "<nick>", this->_client->getNick());
@@ -97,4 +104,3 @@ void		MessageHandler::sendReply(int code)
 	reply += CRLF;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
 }
-

@@ -1,5 +1,5 @@
-#ifndef REPLY_HP
-#define REPLY_HP
+#ifndef REPLY_HPP
+#define REPLY_HPP
 
 #define RPL_WELCOME				001
 #define RPL_YOURHOST			002
@@ -20,13 +20,13 @@
 #define RPL_WHOISIDLE			317
 #define RPL_ENDOFWHOIS			318
 #define RPL_WHOISCHANNELS		319
-#define RPL_WHOREPLY			352
 #define RPL_ENDOFWHO			315
 #define RPL_LIST				322
 #define RPL_LISTEND				323
 #define RPL_CHANNELMODEIS		324
 #define RPL_NOTOPIC				331
 #define RPL_TOPIC				332
+#define RPL_WHOREPLY			352
 #define RPL_NAMREPLY			353
 #define RPL_ENDOFNAMES			366
 #define RPL_MOTDSTART			375
@@ -67,7 +67,7 @@ class Reply
 	{
 		switch(reply)
 		{
-			case RPL_WELCOME: return "Welcome to the Internet Relay Network <nick>!<user>@<host>";
+			case RPL_WELCOME: return ":Welcome to the Internet Relay Network <nick>!<user>@<host>";
 			case RPL_YOURHOST: return "Your host is <servername>, running version <ver>";
 			case RPL_CREATED: return "This server was created <date>";
 			case RPL_MYINFO: return	"<servername> <version> <available user modes> <available channel modes>";

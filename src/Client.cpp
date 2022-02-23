@@ -1,12 +1,8 @@
 #include "Client.hpp"
 
-Client::Client(/* args */)
-{
-}
+Client::Client() : _logged(false) {}
 
-Client::~Client()
-{
-}
+Client::~Client() {}
 
 int Client::getFdSocket() const
 {
@@ -16,6 +12,16 @@ int Client::getFdSocket() const
 struct sockaddr_in *Client::getAddressPointer()
 {
 	return &this->_address;
+}
+
+std::string
+Client::getHostname() {
+	return this->_hostname;
+}
+
+char *
+Client::getHostnameAddress() {
+	return this->_hostname;
 }
 
 std::string	Client::getNick() const
@@ -34,6 +40,23 @@ std::string		Client::getRealName() const
 	return this->_realName;
 }
 
+bool
+Client::isLogged()
+{
+	return this->_logged;
+}
+
+void
+Client::setLogged(bool state)
+{
+	this->_logged = state;
+}
+
+bool
+Client::isRegistered()
+{
+	return !this->_user.empty();
+}
 
 void Client::setFdSocket(int fdSocket)
 {

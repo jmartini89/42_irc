@@ -4,7 +4,8 @@
 #include <list>
 #include <vector>
 #include <iostream>
-
+#include <sstream>
+#include <iomanip>
 
 enum Commands {
 	UNDEFINED,

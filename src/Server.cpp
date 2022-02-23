@@ -95,6 +95,12 @@ void	Server::_addClient()
 	this->_client.push_back(client);
 	client->setFdSocket(fdClient);
 
+
+	// TODO : implement actual hostname, as of now is IPADDR
+	inet_ntop(AF_INET, &client->getAddressPointer()->sin_addr, client->getHostnameAddress(), (socklen_t)clientLen);
+	std::cout << client->getHostname() << std::endl; // DEBUG
+
+
 	// Put this new socket connection also as a 'filter' event
 	// to watch in kqueue, so we can now watch for events on this
 	// new socket.
