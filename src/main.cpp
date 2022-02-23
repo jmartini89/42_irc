@@ -4,14 +4,13 @@
 int
 main(int argc, char **argv) {
 
-	if (argc != 3)
-		return EXIT_FAILURE;
+	if (argc != 3) return EXIT_FAILURE;
 
 	try {
 	Server	server(std::atoi(argv[1]), argv[2]);
-
 	server.run();
-	} catch(std::runtime_error &e) { std::cout << e.what() << std::endl; }
+	}
+	catch(std::runtime_error &e) { std::cout << e.what() << std::endl; }
 
 	return EXIT_SUCCESS;
 }

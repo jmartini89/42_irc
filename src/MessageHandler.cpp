@@ -10,10 +10,7 @@ MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, cons
 
 MessageHandler::~MessageHandler(){};
 
-std::list<Message> *MessageHandler::getMsgList()
-{
-	return &(this->_msgList);
-}
+std::list<Message> *MessageHandler::getMsgList() { return &(this->_msgList); }
 
 //operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
@@ -49,13 +46,13 @@ void MessageHandler::_nickCmd()
 
 	this->_client->setNick(this->_message.parameters[0]);
 
-	if (!this->_client->isLogged() && this->_client->isRegistered())	// WELCOME
-	{
+	if (!this->_client->isLogged() && this->_client->isRegistered()) {
 		this->_client->setLogged(true);
 		sendReply(RPL_WELCOME);
 	}
-	else if (this->_client->isRegistered()) {}							// CHANGE + BROADCAST
-	else {}																// SET
+	else if (this->_client->isRegistered()) {
+		// TODO : BROADCAST
+	}
 }
 
 void MessageHandler::_userCmd()
@@ -64,7 +61,6 @@ void MessageHandler::_userCmd()
 	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
 
 	this->_client->setUser(this->_message.parameters[0]);
-
 
 	std::string realName;
 	if (this->_message.parameters[3][0] == ':') this->_message.parameters[3].erase(0, 1);

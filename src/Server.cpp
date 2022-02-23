@@ -65,7 +65,7 @@ Server::run()
 			if (this->_triggerEvent[i].flags & EV_EOF)
 			{
 				// TODO : BROADCAST + (DELETE?) + ETC ...
-				std::cout << "Client " << this->findClient(eventFd)->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
+				std::cerr << "Client " << this->findClient(eventFd)->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
 				close(eventFd);
 			}
 
@@ -105,7 +105,7 @@ void	Server::_addClient()
 
 	this->_client.push_back(client);
 
-	std::cout << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
+	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
 void

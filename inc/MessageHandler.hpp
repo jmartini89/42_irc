@@ -26,8 +26,6 @@ struct Message
 #include "Client.hpp"
 #include "Reply.hpp"
 
-
-
 class MessageHandler
 {
 	public : // REDUNDANT MSGLIST CONSTRUCTION
