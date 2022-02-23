@@ -9,14 +9,15 @@
 #include <stdexcept>
 
 #include <fcntl.h>
+#include <strings.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
-#include <unistd.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "Client.hpp"
 #include "MessageHandler.hpp"
@@ -24,6 +25,7 @@
 #include "Reply.hpp"
 
 #define BACKLOG_IRC 8
+#define HOSTNAME_LEN 64
 #define IRC_NAME std::string("42IRC")
 #define CRLF std::string("\r\n")
 

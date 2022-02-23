@@ -10,7 +10,7 @@ class Client
 	private:
 		int					_fdSocket;
 		struct sockaddr_in	_address;
-		char				_hostname[INET_ADDRSTRLEN]; // TODO : implement actual hostname, as of now is IPADDR
+		std::string			_hostname;
 
 		bool				_logged;
 		std::string			_nick;
@@ -28,19 +28,19 @@ class Client
 		// Getters
 		int					getFdSocket() const;
 		struct sockaddr_in	*getAddressPointer();
-		char *				getHostnameAddress();
-		std::string			getHostname();
+		std::string			getHostname() const;
 
-		bool				isLogged();
-		bool				isRegistered();
+		bool				isLogged() const;
+		bool				isRegistered() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;
 		std::string			getRealName() const;
-		
+
 		//Setters
 		void				setLogged(bool state);
 		void				setFdSocket(int fdSocket);
+		void				setHostname(char * hostname);
 
 		void				setNick(std::string nick);
 };

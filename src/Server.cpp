@@ -81,34 +81,30 @@ void	Server::_addClient()
 {
 	Client *client = new Client();
 
-	// Incoming socket connection on the listening socket.
-	// Create a new socket for the actual connection to client.
-	int clientLen = sizeof(client->getAddressPointer());
-	int fdClient = accept(this->_fdListen, (struct sockaddr *)client->getAddressPointer(), (socklen_t *)&clientLen);
-	if (fdClient == -1)
-	{
-		delete client ;
-		std::cerr << "Client: accept function failed" << std::endl;
-		return ; 
+	int addrLen = sizeof(client->getAddressPointer());
+	int fdClient = accept(
+		this->_fdListen, (struct sockaddr *)client->getAddressPointer(), (socklen_t *)&addrLen);
+	if (fdClient == -1) {
+		delete client;
+		std::cerr << "addClient: accept function failed" << std::endl;
+		return;
 	}
 
-	this->_client.push_back(client);
 	client->setFdSocket(fdClient);
 
+	char host[HOSTNAME_LEN];
+	if (!getnameinfo((struct sockaddr *)client->getAddressPointer(), addrLen, host, HOSTNAME_LEN, NULL, 0, NI_NAMEREQD))
+		client->setHostname(host);
+	else
+		client->setHostname(inet_ntoa(client->getAddressPointer()->sin_addr));
 
-	// TODO : implement actual hostname, as of now is IPADDR
-	inet_ntop(AF_INET, &client->getAddressPointer()->sin_addr, client->getHostnameAddress(), (socklen_t)clientLen);
-	std::cout << client->getHostname() << std::endl; // DEBUG
-
-
-	// Put this new socket connection also as a 'filter' event
-	// to watch in kqueue, so we can now watch for events on this
-	// new socket.
 	EV_SET(&this->_monitorEvent[0], client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
 	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent function failed");
 
-	std::cout << "Client " << fdClient << " has connected" << std::endl;
+	this->_client.push_back(client);
+
+	std::cout << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
 void
@@ -119,9 +115,9 @@ Server::_eventClientHandler(int eventFd)
 
 	std::list<Message> msgList = MessageParser::parseMsg(this->_buffer);
 	MessageHandler msgHandler(msgList, this->findClient(eventFd), this->_client);
-	std::cout << msgHandler;
 
-	//looping through msgList applying the handleMsg function to every Message
+	std::cout << msgHandler; // DEBUG
+
 	for_each (msgList.begin(), msgList.end(), msgHandler);
 }
 
