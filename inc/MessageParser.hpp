@@ -52,6 +52,7 @@ class MessageParser
 				else if (!msgSplit[0].compare("USER")) msg.cmd = USER;
 				else if (!msgSplit[0].compare("JOIN")) msg.cmd = JOIN;
 				else if (!msgSplit[0].compare("PRVMSG")) msg.cmd = PRVMSG;
+				else msg.cmd = UNDEFINED;
 
 				msgSplit.erase(msgSplit.begin());
 				msg.parameters = msgSplit;

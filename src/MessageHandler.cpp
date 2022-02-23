@@ -63,9 +63,15 @@ void MessageHandler::_userCmd(struct Message msg)
 	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
 
 	this->_client->setUser(msg.parameters[0]);
-	this->_client->setRealName(msg.parameters[3]);
 
-	if (this->_client->isLogged()) return sendReply(RPL_WELCOME);
+
+	std::string realName;
+	if (msg.parameters[3][0] == ':') msg.parameters[3].erase(0, 1);
+	for (int i = 3; i < msg.parameters.size(); i++)
+		realName += msg.parameters[i];
+	this->_client->setRealName(realName);
+
+	if (!this->_client->getNick().empty()) return sendReply(RPL_WELCOME);
 }
 
 void MessageHandler::_joinCmd(struct Message msg)
@@ -103,7 +109,7 @@ void		MessageHandler::sendReply(int code)
 	reply += Reply::getReply(code);
 	MessageParser::replace(reply, "<nick>", this->_client->getNick());
 	MessageParser::replace(reply, "<user>", this->_client->getUser());
-	MessageParser::replace(reply, "<host>", this->_client->getRealName());
+	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
 
 	// char *test = ":42IRC "RPL_WELCOME" antony :Welcommen!\r\n";
