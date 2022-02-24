@@ -12,6 +12,13 @@ class MessageParser
 		MessageParser() {};
 		~MessageParser() {};
 	public:
+		static std::string toUpperStr(std::string str) {
+			std::string ret;
+			for (int i = 0; i < str.size(); i++)
+				ret +=  std::toupper(str[i]);
+			return ret;
+		}
+
 		static std::string ltrim(const std::string &s)
 		{
 			size_t start = s.find_first_not_of(' ');
@@ -49,7 +56,7 @@ class MessageParser
 				struct Message msg;
 				std::vector<std::string> msgSplit = split(message[i], " ");
 
-				enumMap::const_iterator it = cmdMap.find(msgSplit[0]);
+				enumMap::const_iterator it = cmdMap.find(toUpperStr(msgSplit[0]));
 				if (it == cmdMap.end()) msg.cmd = UNDEFINED;
 				else {
 					msg.cmd = (*it).second;

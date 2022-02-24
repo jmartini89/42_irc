@@ -66,7 +66,10 @@ void MessageHandler::_userCmd()
 		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
-	if (!this->_client->getNick().empty()) return sendReply(RPL_WELCOME);
+	if (!this->_client->getNick().empty()) {
+		this->_client->setLogged(true);
+		return sendReply(RPL_WELCOME);
+	}
 }
 
 void MessageHandler::_joinCmd()
