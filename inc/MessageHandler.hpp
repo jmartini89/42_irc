@@ -6,13 +6,16 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <map>
 
 enum Commands {
 	UNDEFINED,
 	NICK,
 	USER,
 	JOIN,
-	PRVMSG
+	PRIVMSG,
+	PING,
+	PONG
 };
 
 struct Message 
@@ -22,13 +25,13 @@ struct Message
 	std::vector<std::string>	parameters;
 };
 
-#include "Server.hpp"
 #include "Client.hpp"
-#include "Reply.hpp"
+
+typedef std::map<std::string, int> enumMap;
 
 class MessageHandler
 {
-	public : // REDUNDANT MSGLIST CONSTRUCTION
+	public :
 		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
 		~MessageHandler();
 
@@ -38,19 +41,34 @@ class MessageHandler
 		void	sendReply(int code);
 
 		//Getters
-		std::list<Message> *getMsgList(); // REDUNDANT
+		std::list<Message> *getMsgList(); // REDUNDANT ?
 
 	private :
 		std::vector<Client *>	_clientVector;
 		Client *				_client;
-		std::list<Message>		_msgList; // REDUNDANT
+		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
+
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_prvMsgCmd();
+		void	_pongCmd();
 };
 
+static enumMap _initMap() {
+	enumMap aMap;
+	aMap["UNDEFINED"] = UNDEFINED;
+	aMap["NICK"] = NICK;
+	aMap["USER"] = USER;
+	aMap["JOIN"] = JOIN;
+	aMap["PRIVMSG"] = PRIVMSG;
+	aMap["PING"] = PING;
+	aMap["PONG"] = PONG;
+	return aMap;
+};
+
+const enumMap cmdMap = _initMap();
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh);
 std::ostream& operator<<(std::ostream& os, const Message& m);
 

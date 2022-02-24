@@ -48,14 +48,14 @@ class MessageParser
 			for (int i = 0; i < message.size(); i++) {
 				struct Message msg;
 				std::vector<std::string> msgSplit = split(message[i], " ");
-				if (!msgSplit[0].compare("NICK")) msg.cmd = NICK;
-				else if (!msgSplit[0].compare("USER")) msg.cmd = USER;
-				else if (!msgSplit[0].compare("JOIN")) msg.cmd = JOIN;
-				else if (!msgSplit[0].compare("PRVMSG")) msg.cmd = PRVMSG;
-				else msg.cmd = UNDEFINED;
 
-				if (msg.cmd != UNDEFINED)
+				enumMap::const_iterator it = cmdMap.find(msgSplit[0]);
+				if (it == cmdMap.end()) msg.cmd = UNDEFINED;
+				else {
+					msg.cmd = (*it).second;
 					msgSplit.erase(msgSplit.begin());
+				}
+
 				msg.parameters = msgSplit;
 				msgList.push_back(msg);
 			}

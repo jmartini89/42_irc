@@ -1,5 +1,6 @@
 #include "MessageHandler.hpp"
-#include "Client.hpp"
+#include "Server.hpp"
+#include "Reply.hpp"
 
 MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector)
 {
@@ -23,16 +24,13 @@ void MessageHandler::handleMsg()
 {
 	switch(this->_message.cmd)
 	{
-		case NICK:
-			_nickCmd(); break;
-		case USER:
-			_userCmd(); break;
-		case JOIN:
-			_joinCmd(); break;
-		case PRVMSG:
-			_prvMsgCmd(); break;
-		default:
-			sendReply(ERR_UNKNOWNCOMMAND);
+		case NICK:		_nickCmd(); break;
+		case USER:		_userCmd(); break;
+		case JOIN:		_joinCmd(); break;
+		case PRIVMSG:	_prvMsgCmd(); break;
+		case PING:		_pongCmd(); break;
+		case PONG:		break;
+		default:		sendReply(ERR_UNKNOWNCOMMAND);
 	}
 }
 
@@ -76,6 +74,11 @@ void MessageHandler::_joinCmd()
 
 void MessageHandler::_prvMsgCmd()
 {}
+
+void MessageHandler::_pongCmd() {
+	std::string reply = "PONG" + CRLF;
+	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
+}
 
 std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
 {
