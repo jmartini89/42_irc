@@ -35,7 +35,7 @@ void MessageHandler::handleMsg()
 }
 
 bool MessageHandler::cmdValidParameters(int required) {
-	return (this->_message.parameters.size() == required);
+	return (this->_message.parameters.size() >= required);
 }
 
 void MessageHandler::_nickCmd()
