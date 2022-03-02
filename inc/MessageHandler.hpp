@@ -49,6 +49,7 @@ class MessageHandler
 		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
 
+		bool	cmdValidParameters(int required);
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();

@@ -46,7 +46,7 @@ class MessageParser
 			return ret;
 		};
 
-		static std::list<Message> 	parseMsg(std::string buffer)
+		static std::list<Message> parseMsg(std::string buffer)
 		{
 
 			std::list<Message> msgList;
