@@ -58,10 +58,7 @@ class MessageParser
 
 				enumMap::const_iterator it = cmdMap.find(toUpperStr(msgSplit[0]));
 				if (it == cmdMap.end()) msg.cmd = UNDEFINED;
-				else {
-					msg.cmd = (*it).second;
-					msgSplit.erase(msgSplit.begin());
-				}
+				else msg.cmd = (*it).second;
 
 				msg.parameters = msgSplit;
 				msgList.push_back(msg);

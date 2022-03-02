@@ -40,13 +40,13 @@ bool MessageHandler::cmdValidParameters(int required) {
 
 void MessageHandler::_nickCmd()
 {
-	if (!this->cmdValidParameters(1)) return sendReply(ERR_NONICKNAMEGIVEN);
+	if (!this->cmdValidParameters(2)) return sendReply(ERR_NONICKNAMEGIVEN);
 
 	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (this->_message.parameters[0] == this->_clientVector[i]->getNick())
+		if (this->_message.parameters[1] == this->_clientVector[i]->getNick())
 			return sendReply(ERR_NICKNAMEINUSE);
 
-	this->_client->setNick(this->_message.parameters[0]);
+	this->_client->setNick(this->_message.parameters[1]);
 
 	if (!this->_client->isLogged() && this->_client->isRegistered()) {
 		this->_client->setLogged(true);
@@ -59,14 +59,14 @@ void MessageHandler::_nickCmd()
 
 void MessageHandler::_userCmd()
 {
-	if (!this->cmdValidParameters(4)) return sendReply(ERR_NEEDMOREPARAMS);
+	if (!this->cmdValidParameters(5)) return sendReply(ERR_NEEDMOREPARAMS);
 	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
 
-	this->_client->setUser(this->_message.parameters[0]);
+	this->_client->setUser(this->_message.parameters[1]);
 
 	std::string realName;
-	if (this->_message.parameters[3][0] == ':') this->_message.parameters[3].erase(0, 1);
-	for (int i = 3; i < this->_message.parameters.size(); i++)
+	if (this->_message.parameters[4][0] == ':') this->_message.parameters[4].erase(0, 1);
+	for (int i = 4; i < this->_message.parameters.size(); i++)
 		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
@@ -110,7 +110,7 @@ MessageHandler::sendReply(int code)
 	std::string reply = ":" + IRC_NAME + " ";
 
 	std::ostringstream code_s;
-	code_s << std::setw( 3 ) << std::setfill( '0' ) << std::to_string(code);
+	code_s << std::setw(3) << std::setfill('0') << std::to_string(code);
 	reply += code_s.str();
 	reply += " " + this->_client->getNick() + " ";
 
@@ -119,8 +119,7 @@ MessageHandler::sendReply(int code)
 	MessageParser::replace(reply, "<user>", this->_client->getUser());
 	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
-	if (!this->_message.parameters.empty())
-		MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
+	MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
 
 	reply += CRLF;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
