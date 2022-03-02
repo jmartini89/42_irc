@@ -56,7 +56,7 @@ class MessageParser
 				struct Message msg;
 				std::vector<std::string> msgSplit = split(message[i], " ");
 
-				enumMap::const_iterator it = cmdMap.find(toUpperStr(msgSplit[0]));
+				enumMap::const_iterator it = cmdMap.find(toUpperStr(msgSplit[0])); // TOUPPER MAY CAUSE ISSUES WITH SIMPLE MSGS
 				if (it == cmdMap.end()) msg.cmd = UNDEFINED;
 				else msg.cmd = (*it).second;
 

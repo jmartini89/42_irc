@@ -22,6 +22,10 @@ void MessageHandler::operator()(struct Message msg)
 
 void MessageHandler::handleMsg()
 {
+	if (!(this->_message.cmd == NICK || this->_message.cmd == USER)
+		&& !this->_client->isRegistered())
+		return sendReply(ERR_NOTREGISTERED);
+
 	switch(this->_message.cmd)
 	{
 		case NICK:		_nickCmd(); break;
@@ -34,13 +38,20 @@ void MessageHandler::handleMsg()
 	}
 }
 
-bool MessageHandler::cmdValidParameters(int required) {
+bool MessageHandler::_cmdValidParameters(int required) {
 	return (this->_message.parameters.size() >= required);
+}
+
+void MessageHandler::_welcomeReply() {
+	sendReply(RPL_WELCOME);
+	sendReply(RPL_YOURHOST);
+	sendReply(RPL_CREATED);
+	sendReply(RPL_MYINFO);
 }
 
 void MessageHandler::_nickCmd()
 {
-	if (!this->cmdValidParameters(2)) return sendReply(ERR_NONICKNAMEGIVEN);
+	if (!this->_cmdValidParameters(2)) return sendReply(ERR_NONICKNAMEGIVEN);
 
 	for (int i = 0; i < this->_clientVector.size(); i++)
 		if (this->_message.parameters[1] == this->_clientVector[i]->getNick())
@@ -48,19 +59,19 @@ void MessageHandler::_nickCmd()
 
 	this->_client->setNick(this->_message.parameters[1]);
 
-	if (!this->_client->isLogged() && this->_client->isRegistered()) {
-		this->_client->setLogged(true);
-		sendReply(RPL_WELCOME);
+	if (!this->_client->isRegistered() && this->_client->isUser()) {
+		this->_client->setRegistered(true);
+		this->_welcomeReply();
 	}
-	else if (this->_client->isRegistered()) {
+	else if (this->_client->isUser()) {
 		// TODO : BROADCAST
 	}
 }
 
 void MessageHandler::_userCmd()
 {
-	if (!this->cmdValidParameters(5)) return sendReply(ERR_NEEDMOREPARAMS);
-	if (this->_client->isRegistered()) return sendReply(ERR_ALREADYREGISTRED);
+	if (!this->_cmdValidParameters(5)) return sendReply(ERR_NEEDMOREPARAMS);
+	if (this->_client->isUser()) return sendReply(ERR_ALREADYREGISTRED);
 
 	this->_client->setUser(this->_message.parameters[1]);
 
@@ -71,8 +82,8 @@ void MessageHandler::_userCmd()
 	this->_client->setRealName(realName);
 
 	if (!this->_client->getNick().empty()) {
-		this->_client->setLogged(true);
-		return sendReply(RPL_WELCOME);
+		this->_client->setRegistered(true);
+		return this->_welcomeReply();
 	}
 }
 

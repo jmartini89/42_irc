@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client() : _logged(false) {}
+Client::Client() : _registered(false) {}
 
 Client::~Client() {}
 
@@ -26,17 +26,17 @@ std::string
 Client::getRealName() const { return this->_realName; }
 
 bool
-Client::isLogged() const { return this->_logged; }
+Client::isRegistered() const { return this->_registered; }
 
 bool
-Client::isRegistered() const { return !this->_user.empty(); }
+Client::isUser() const { return !this->_user.empty(); }
 
 /*
 * SETTERS
 */
 
 void
-Client::setLogged(bool state) { this->_logged = state; }
+Client::setRegistered(bool state) { this->_registered = state; }
 
 void
 Client::setFdSocket(int fdSocket) { this->_fdSocket = fdSocket; }

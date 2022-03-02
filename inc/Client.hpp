@@ -12,7 +12,7 @@ class Client
 		struct sockaddr_in	_address;
 		std::string			_hostname;
 
-		bool				_logged;
+		bool				_registered;
 		std::string			_nick;
 		std::string			_user;
 		std::string			_realName;
@@ -30,15 +30,15 @@ class Client
 		struct sockaddr_in	*getAddressPointer();
 		std::string			getHostname() const;
 
-		bool				isLogged() const;
 		bool				isRegistered() const;
+		bool				isUser() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;
 		std::string			getRealName() const;
 
 		//Setters
-		void				setLogged(bool state);
+		void				setRegistered(bool state);
 		void				setFdSocket(int fdSocket);
 		void				setHostname(char * hostname);
 
