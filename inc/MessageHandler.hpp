@@ -39,8 +39,10 @@ class MessageHandler
 		void	operator()(struct Message msg);
 
 		void	handleMsg();
-		void	sendReply(int code);
-		void	sendReply(int code, std::string target);
+
+		void	serverReply(int code);
+		void	serverReply(int code, std::string target);
+		void	sendMsg(int fd, std::string message);
 
 		//Getters
 		std::list<Message> *getMsgList(); // REDUNDANT ?
@@ -51,15 +53,14 @@ class MessageHandler
 		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
 
-		bool	_cmdValidParameters(int required);
-		void	_welcomeReply();
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_prvMsgCmd(bool isNotice);
-		void	_noticeCmd();
 		void	_pongCmd();
-		Client 	*_findClient(std::string nick);
+
+		void	_welcomeReply();
+		Client	*_findClient(std::string nick);
 
 };
 
