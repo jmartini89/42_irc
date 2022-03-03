@@ -88,10 +88,44 @@ void MessageHandler::_userCmd()
 }
 
 void MessageHandler::_joinCmd()
-{}
+{	
+
+}
+
+static std::string paramAsStr(std::string *params)
+{
+	std::string str;
+
+	for (int i = 0; !params[i].empty(); ++i)
+		str += params[i] + " ";
+	return str;
+}
 
 void MessageHandler::_prvMsgCmd()
-{}
+{
+	if (this->_message.parameters.size() == 1) //only command send
+		return sendReply(ERR_NORECIPIENT);
+	if (this->_message.parameters.size() == 2) //command + target 
+	 	return sendReply(ERR_NOTEXTTOSEND);
+	
+	std::string target = this->_message.parameters[1];
+	if (target.c_str()[0] == '#')
+		;  //handle # for channels
+
+	std::string header = ":" + this->_client->getNick() 
+						+ "!" + this->_client->getUser() 
+						+ "@" + this->_client->getHostname() 
+						+ " PRIVMSG "
+						+ target; 
+	std::string text = " :" + paramAsStr(this->_message.parameters.data() + 2); //message starts at parameters[2]
+
+	Client *targetClient = this->_findClient(target);
+	if (!targetClient)
+		sendReply(ERR_NOSUCHNICK);
+	std::string msg = header + text + CRLF;
+	send(targetClient->getFdSocket(), msg.c_str(), msg.size(), 0);
+
+}
 
 void MessageHandler::_pongCmd() {
 	std::string reply = "PONG" + CRLF;
@@ -134,4 +168,13 @@ MessageHandler::sendReply(int code)
 
 	reply += CRLF;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
+}
+
+Client *
+MessageHandler::_findClient(std::string nick)
+{
+	for (int i = 0; i < this->_clientVector.size(); i++)
+		if (nick == this->_clientVector[i]->getNick())
+			return this->_clientVector[i];
+	return (NULL);
 }

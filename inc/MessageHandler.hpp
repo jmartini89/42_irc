@@ -56,6 +56,8 @@ class MessageHandler
 		void	_joinCmd();
 		void	_prvMsgCmd();
 		void	_pongCmd();
+		Client 	*_findClient(std::string nick);
+
 };
 
 static enumMap _initMap() {
