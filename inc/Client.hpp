@@ -32,6 +32,7 @@ class Client
 
 		bool				isRegistered() const;
 		bool				isUser() const;
+		bool				isConnected() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;

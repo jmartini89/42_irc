@@ -31,6 +31,9 @@ Client::isRegistered() const { return this->_registered; }
 bool
 Client::isUser() const { return !this->_user.empty(); }
 
+bool
+Client::isConnected() const { return this->_fdSocket != -1; }
+
 /*
 * SETTERS
 */

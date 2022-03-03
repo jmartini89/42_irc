@@ -54,8 +54,8 @@ void MessageHandler::_nickCmd()
 {
 	if (!this->_cmdValidParameters(2)) return sendReply(ERR_NONICKNAMEGIVEN);
 
-	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (this->_message.parameters[1] == this->_clientVector[i]->getNick())
+
+	if (this->_findClient(this->_message.parameters[1]))
 			return sendReply(ERR_NICKNAMEINUSE);
 
 	this->_client->setNick(this->_message.parameters[1]);
@@ -204,7 +204,7 @@ Client *
 MessageHandler::_findClient(std::string nick)
 {
 	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (nick == this->_clientVector[i]->getNick())
+		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
 			return this->_clientVector[i];
 	return (NULL);
 }

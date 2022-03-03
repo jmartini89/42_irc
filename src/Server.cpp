@@ -65,7 +65,9 @@ Server::run()
 			if (this->_triggerEvent[i].flags & EV_EOF)
 			{
 				// TODO : BROADCAST + (DELETE?) + ETC ...
-				std::cerr << "Client " << this->findClient(eventFd)->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
+				Client *client = this->findClient(eventFd);
+				client->setFdSocket(-1);
+				std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
 				close(eventFd);
 			}
 
