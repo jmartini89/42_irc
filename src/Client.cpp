@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client() : _logged(false) {}
+Client::Client() : _registered(false) {}
 
 Client::~Client() {}
 
@@ -17,6 +17,9 @@ std::string
 Client::getHostname() const { return this->_hostname; }
 
 std::string
+Client::getBuffer() { return this->_buffer; }
+
+std::string
 Client::getNick() const { return this->_nick; }
 
 std::string
@@ -26,23 +29,32 @@ std::string
 Client::getRealName() const { return this->_realName; }
 
 bool
-Client::isLogged() const { return this->_logged; }
+Client::isRegistered() const { return this->_registered; }
 
 bool
-Client::isRegistered() const { return !this->_user.empty(); }
+Client::isUser() const { return !this->_user.empty(); }
+
+bool
+Client::isConnected() const { return this->_fdSocket != -1; }
 
 /*
 * SETTERS
 */
 
 void
-Client::setLogged(bool state) { this->_logged = state; }
-
-void
 Client::setFdSocket(int fdSocket) { this->_fdSocket = fdSocket; }
 
 void
-Client:: setHostname(char * hostname) { this->_hostname = hostname; }
+Client::addBuffer(std::string buffer) { this->_buffer += buffer; }
+
+void
+Client::clearBuffer() { this->_buffer.clear(); }
+
+void
+Client::setRegistered(bool state) { this->_registered = state; }
+
+void
+Client::setHostname(char * hostname) { this->_hostname = hostname; }
 
 void
 Client::setNick(std::string nick) { this->_nick = nick; }

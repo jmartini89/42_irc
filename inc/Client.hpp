@@ -11,8 +11,9 @@ class Client
 		int					_fdSocket;
 		struct sockaddr_in	_address;
 		std::string			_hostname;
+		std::string			_buffer;
 
-		bool				_logged;
+		bool				_registered;
 		std::string			_nick;
 		std::string			_user;
 		std::string			_realName;
@@ -29,17 +30,21 @@ class Client
 		int					getFdSocket() const;
 		struct sockaddr_in	*getAddressPointer();
 		std::string			getHostname() const;
+		std::string			getBuffer();
 
-		bool				isLogged() const;
 		bool				isRegistered() const;
+		bool				isUser() const;
+		bool				isConnected() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;
 		std::string			getRealName() const;
 
 		//Setters
-		void				setLogged(bool state);
 		void				setFdSocket(int fdSocket);
+		void				addBuffer(std::string buffer);
+		void				clearBuffer();
+		void				setRegistered(bool state);
 		void				setHostname(char * hostname);
 
 		void				setNick(std::string nick);

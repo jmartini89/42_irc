@@ -14,6 +14,7 @@ enum Commands {
 	USER,
 	JOIN,
 	PRIVMSG,
+	NOTICE,
 	PING,
 	PONG
 };
@@ -38,7 +39,10 @@ class MessageHandler
 		void	operator()(struct Message msg);
 
 		void	handleMsg();
-		void	sendReply(int code);
+
+		void	serverReply(int code);
+		void	serverReply(int code, std::string target);
+		void	sendMsg(int fd, std::string message);
 
 		//Getters
 		std::list<Message> *getMsgList(); // REDUNDANT ?
@@ -52,8 +56,12 @@ class MessageHandler
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
-		void	_prvMsgCmd();
+		void	_prvMsgCmd(bool isNotice);
 		void	_pongCmd();
+
+		void	_welcomeReply();
+		Client	*_findClient(std::string nick);
+
 };
 
 static enumMap _initMap() {
@@ -63,6 +71,7 @@ static enumMap _initMap() {
 	aMap["USER"] = USER;
 	aMap["JOIN"] = JOIN;
 	aMap["PRIVMSG"] = PRIVMSG;
+	aMap["NOTICE"] = NOTICE;
 	aMap["PING"] = PING;
 	aMap["PONG"] = PONG;
 	return aMap;
