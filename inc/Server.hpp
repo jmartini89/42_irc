@@ -26,6 +26,7 @@
 
 #define BACKLOG_IRC 8
 #define HOSTNAME_LEN 64
+#define BUFFER_SIZE 1024
 #define IRC_NAME std::string("42IRC")
 #define CRLF std::string("\r\n")
 
@@ -46,12 +47,11 @@ class Server
 		int					_fdListen;
 		struct sockaddr_in	_address;
 
-		char			_buffer[1024];
 		int				_kQueue;
 
 		std::vector<t_kevent>	_monitorEvent;
 		std::vector<t_kevent>	_triggerEvent;
-		std::vector<Client *>	_client;
+		std::vector<Client *>	_clientVector;
 
 		void	_addClient();
 		void	_constructErr(std::string errstr);

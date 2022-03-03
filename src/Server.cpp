@@ -105,7 +105,7 @@ void	Server::_addClient()
 	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent function failed");
 
-	this->_client.push_back(client);
+	this->_clientVector.push_back(client);
 
 	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
@@ -113,22 +113,33 @@ void	Server::_addClient()
 void
 Server::_eventClientHandler(int eventFd)
 {
-	bzero(this->_buffer, sizeof(this->_buffer));
-	size_t bytes_read = recv(eventFd, this->_buffer, sizeof(this->_buffer), 0);
+	Client * client = this->findClient(eventFd);
+	char buffer[BUFFER_SIZE];
 
-	std::list<Message> msgList = MessageParser::parseMsg(this->_buffer);
-	MessageHandler msgHandler(msgList, this->findClient(eventFd), this->_client);
+	bzero(buffer, BUFFER_SIZE);
+	size_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
+
+	client->addBuffer(buffer);
+
+	// TODO : clear buffer only until last CRLF
+	// for example : cmd params CLRF cmd params (END OF MESSAGE FOR REASONS) -> 2nd part should be kept
+	if (client->getBuffer().find(CRLF) == std::string::npos)
+		return;
+
+	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
+	MessageHandler msgHandler(msgList, client, this->_clientVector);
 
 	std::cout << msgHandler; // DEBUG
 
 	for_each (msgList.begin(), msgList.end(), msgHandler);
+	client->clearBuffer();
 }
 
 Client *
 Server::findClient(int eventFd)
 {
-	for (int i = 0; i < this->_client.size(); i++)
-		if (eventFd == this->_client[i]->getFdSocket())
-			return this->_client[i];
+	for (int i = 0; i < this->_clientVector.size(); i++)
+		if (eventFd == this->_clientVector[i]->getFdSocket())
+			return this->_clientVector[i];
 	throw std::runtime_error("findClient: client not found");
 }

@@ -17,6 +17,9 @@ std::string
 Client::getHostname() const { return this->_hostname; }
 
 std::string
+Client::getBuffer() { return this->_buffer; }
+
+std::string
 Client::getNick() const { return this->_nick; }
 
 std::string
@@ -39,13 +42,19 @@ Client::isConnected() const { return this->_fdSocket != -1; }
 */
 
 void
-Client::setRegistered(bool state) { this->_registered = state; }
-
-void
 Client::setFdSocket(int fdSocket) { this->_fdSocket = fdSocket; }
 
 void
-Client:: setHostname(char * hostname) { this->_hostname = hostname; }
+Client::addBuffer(std::string buffer) { this->_buffer += buffer; }
+
+void
+Client::clearBuffer() { this->_buffer.clear(); }
+
+void
+Client::setRegistered(bool state) { this->_registered = state; }
+
+void
+Client::setHostname(char * hostname) { this->_hostname = hostname; }
 
 void
 Client::setNick(std::string nick) { this->_nick = nick; }
