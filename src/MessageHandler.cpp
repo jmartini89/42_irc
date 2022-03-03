@@ -31,7 +31,8 @@ void MessageHandler::handleMsg()
 		case NICK:		_nickCmd(); break;
 		case USER:		_userCmd(); break;
 		case JOIN:		_joinCmd(); break;
-		case PRIVMSG:	_prvMsgCmd(); break;
+		case PRIVMSG:	_prvMsgCmd(false); break;
+		case NOTICE:	_noticeCmd(); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		default:		sendReply(ERR_UNKNOWNCOMMAND);
@@ -92,39 +93,52 @@ void MessageHandler::_joinCmd()
 
 }
 
-static std::string paramAsStr(std::string *params)
+static std::string paramAsStr(std::vector<std::string>::iterator iter,
+								std::vector<std::string>::iterator end)
 {
 	std::string str;
-
-	for (int i = 0; !params[i].empty(); ++i)
-		str += params[i] + " ";
+	for (; iter != end; ++iter)
+		str += *iter + " ";
 	return str;
 }
 
-void MessageHandler::_prvMsgCmd()
+void MessageHandler::_noticeCmd()
+{
+	_prvMsgCmd(true); //only difference is that NOTICE doesn't send reply
+}
+
+void MessageHandler::_prvMsgCmd(bool isNotice)
 {
 	if (this->_message.parameters.size() == 1) //only command send
-		return sendReply(ERR_NORECIPIENT);
+	{
+		if (isNotice) return;
+		return (sendReply(ERR_NORECIPIENT));
+	}
 	if (this->_message.parameters.size() == 2) //command + target 
-	 	return sendReply(ERR_NOTEXTTOSEND);
+	{
+		if (isNotice) return;
+		return (sendReply(ERR_NOTEXTTOSEND));
+	}
 	
 	std::string target = this->_message.parameters[1];
 	if (target.c_str()[0] == '#')
-		;  //handle # for channels
+		;  //TODO handle # for channels
 
 	std::string header = ":" + this->_client->getNick() 
 						+ "!" + this->_client->getUser() 
 						+ "@" + this->_client->getHostname() 
-						+ " PRIVMSG "
+						+ " " + this->_message.parameters[0] + " "
 						+ target; 
-	std::string text = " :" + paramAsStr(this->_message.parameters.data() + 2); //message starts at parameters[2]
+	std::string text = " :" + paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
 
 	Client *targetClient = this->_findClient(target);
 	if (!targetClient)
-		sendReply(ERR_NOSUCHNICK);
+	{
+		if (isNotice) return;
+		return (sendReply(ERR_NOSUCHNICK, target));
+	}
 	std::string msg = header + text + CRLF;
 	send(targetClient->getFdSocket(), msg.c_str(), msg.size(), 0);
-
 }
 
 void MessageHandler::_pongCmd() {
@@ -150,7 +164,7 @@ std::ostream& operator<<(std::ostream& os, const Message& m)
 }
 
 void
-MessageHandler::sendReply(int code)
+MessageHandler::sendReply(int code, std::string target)
 {
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -165,9 +179,25 @@ MessageHandler::sendReply(int code)
 	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
 	MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
+	MessageParser::replace(reply, "<nickname>", target);
+
+	// Client *targetClient = _findClient(target);
+	// if (targetClient)
+	// {
+	// 	// ..
+	// }
 
 	reply += CRLF;
 	send(this->_client->getFdSocket(), reply.c_str(), reply.size(), 0);
+}
+
+/* 
+ * Use sendReply(int code, std::string target) if the reply needs to send target client informations
+ */
+void
+MessageHandler::sendReply(int code)
+{
+	sendReply(code, "");
 }
 
 Client *
