@@ -3,6 +3,10 @@
 Server::Server(const unsigned int port, std::string password)
 : _password(password) {
 
+	std::time_t now = std::time(nullptr);
+    this->_creationDate = std::asctime(std::localtime(&now));
+	this->_creationDate.pop_back();
+
 	this->_fdListen = socket(AF_INET, SOCK_STREAM, 0);
 	if (this->_fdListen == -1) throw std::runtime_error("socket function failed");;
 
@@ -127,7 +131,7 @@ Server::_eventClientHandler(int eventFd)
 		return;
 
 	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
-	MessageHandler msgHandler(msgList, client, this->_clientVector);
+	MessageHandler msgHandler(msgList, client, this->_clientVector, this);
 
 	std::cout << msgHandler; // DEBUG
 
@@ -142,4 +146,14 @@ Server::findClient(int eventFd)
 		if (eventFd == this->_clientVector[i]->getFdSocket())
 			return this->_clientVector[i];
 	throw std::runtime_error("findClient: client not found");
+}
+
+std::string		Server::getCreationDate() const
+{ 
+	return this->_creationDate;
+}
+
+bool		Server::checkPwd(std::string password)
+{
+	return (this->_password == password);
 }

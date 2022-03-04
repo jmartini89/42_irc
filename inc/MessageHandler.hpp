@@ -16,7 +16,8 @@ enum Commands {
 	PRIVMSG,
 	NOTICE,
 	PING,
-	PONG
+	PONG,
+	PASS
 };
 
 struct Message 
@@ -27,13 +28,14 @@ struct Message
 };
 
 #include "Client.hpp"
+class Server;
 
 typedef std::map<std::string, int> enumMap;
 
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
+		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector, Server *server);
 		~MessageHandler();
 
 		void	operator()(struct Message msg);
@@ -52,11 +54,13 @@ class MessageHandler
 		Client *				_client;
 		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
+		Server					*_server;
 
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_prvMsgCmd(bool isNotice);
+		void	_passCmd();
 		void	_pongCmd();
 
 		void	_welcomeReply();
@@ -74,6 +78,7 @@ static enumMap _initMap() {
 	aMap["NOTICE"] = NOTICE;
 	aMap["PING"] = PING;
 	aMap["PONG"] = PONG;
+	aMap["PASS"] = PASS;
 	return aMap;
 };
 

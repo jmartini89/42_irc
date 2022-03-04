@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client() : _registered(false) {}
+Client::Client() : _registered(false), _allowed(false) {}
 
 Client::~Client() {}
 
@@ -37,6 +37,9 @@ Client::isUser() const { return !this->_user.empty(); }
 bool
 Client::isConnected() const { return this->_fdSocket != -1; }
 
+bool
+Client::isAllowed() const { return this->_allowed; }
+
 /*
 * SETTERS
 */
@@ -64,6 +67,9 @@ Client::setUser(std::string user) { this->_user = user; }
 
 void
 Client::setRealName(std::string realName) { this->_realName = realName; }
+
+void
+Client::setAllowed(bool state) { this->_allowed = state; }
 
 bool
 Client::operator== (const Client * rhs) const {

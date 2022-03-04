@@ -2,11 +2,13 @@
 #include "Server.hpp"
 #include "Reply.hpp"
 
-MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector)
+//TODO use client and clientVector from server
+MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector, Server * server)
 {
 	this->_msgList = msgList;
 	this->_client = client;
 	this->_clientVector = clientVector;
+	this->_server = server;
 }
 
 MessageHandler::~MessageHandler(){};
@@ -39,7 +41,7 @@ std::ostream& operator<<(std::ostream& os, const Message& m)
 
 void MessageHandler::handleMsg()
 {
-	if (!(this->_message.cmd == NICK || this->_message.cmd == USER)
+	if (!(this->_message.cmd == NICK || this->_message.cmd == USER || this->_message.cmd == PASS)
 		&& !this->_client->isRegistered())
 		return serverReply(ERR_NOTREGISTERED);
 
@@ -52,6 +54,7 @@ void MessageHandler::handleMsg()
 		case NOTICE:	_prvMsgCmd(true); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
+		case PASS:		_passCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -66,6 +69,8 @@ void MessageHandler::_nickCmd()
 	this->_client->setNick(this->_message.parameters[1]);
 
 	if (!this->_client->isRegistered() && this->_client->isUser()) {
+		if (!this->_client->isAllowed())
+			return 	serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
 		this->_client->setRegistered(true);
 		this->_welcomeReply();
 	}
@@ -77,7 +82,7 @@ void MessageHandler::_nickCmd()
 void MessageHandler::_userCmd()
 {
 	if (this->_message.parameters.size() < 5) return serverReply(ERR_NEEDMOREPARAMS);
-	if (this->_client->isUser()) return serverReply(ERR_ALREADYREGISTRED);
+	if (this->_client->isUser()) return serverReply(ERR_ALREADYREGISTRED); //FIXME(?) check isRegistered() and not isUser
 
 	this->_client->setUser(this->_message.parameters[1]);
 
@@ -88,9 +93,23 @@ void MessageHandler::_userCmd()
 	this->_client->setRealName(realName);
 
 	if (!this->_client->getNick().empty()) {
+		if (!this->_client->isAllowed())
+			return 	serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
 		this->_client->setRegistered(true);
 		return this->_welcomeReply();
 	}
+}
+
+void	MessageHandler::_passCmd()
+{
+	if (this->_message.parameters.size() == 1)
+		return serverReply(ERR_NEEDMOREPARAMS);
+	if (this->_client->isRegistered())
+		return serverReply(ERR_ALREADYREGISTRED);
+	if (this->_server->checkPwd(this->_message.parameters[1]))
+		this->_client->setAllowed(true);
+	else
+		this->_client->setAllowed(false); //needed in case more pwd commands are sent (only the last one must be used)
 }
 
 void MessageHandler::_joinCmd()
@@ -174,7 +193,12 @@ MessageHandler::serverReply(int code, std::string target)
 	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
 	MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
+	MessageParser::replace(reply, "<date>", this->_server->getCreationDate());
+	MessageParser::replace(reply, "<version>", VERSION);
+	MessageParser::replace(reply, "<available user modes>", USER_MODES);
+	MessageParser::replace(reply, "<available channel modes>", CHANNEL_MODES);
 	MessageParser::replace(reply, "<nickname>", target);
+
 
 	// Client *targetClient = _findClient(target);
 	// if (targetClient)
