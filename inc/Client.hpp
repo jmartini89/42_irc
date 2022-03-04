@@ -5,6 +5,9 @@
 
 #include <netinet/in.h>
 
+#include "Defines.hpp"
+#include "MessageParser.hpp"
+
 class Client
 {
 	private:
@@ -44,8 +47,10 @@ class Client
 
 		//Setters
 		void				setFdSocket(int fdSocket);
+
 		void				addBuffer(std::string buffer);
 		void				clearBuffer();
+
 		void				setRegistered(bool state);
 		void				setHostname(char * hostname);
 		void				setAllowed(bool state);

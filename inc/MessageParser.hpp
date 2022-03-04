@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "MessageHandler.hpp"
+#include "Defines.hpp"
 
 class MessageParser
 {
@@ -50,7 +51,7 @@ class MessageParser
 		{
 
 			std::list<Message> msgList;
-			std::vector<std::string> message = split(buffer, "\r\n");
+			std::vector<std::string> message = split(buffer, CRLF);
 
 			for (int i = 0; i < message.size(); i++) {
 				struct Message msg;
@@ -75,6 +76,19 @@ class MessageParser
 			str.replace(start, from.length(), to);
 			return true;
 		};
+
+		static int findLastOf(std::string haystack, std::string needle)
+		{
+			size_t pos = 0;
+			for (size_t tmp = 0; pos < haystack.size();) {
+				tmp = haystack.find(needle, tmp);
+				if (tmp == -1)
+					break;
+				pos = tmp;
+				tmp += needle.length();
+			}
+			return pos;
+		}
 };
 
 #endif

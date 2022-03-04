@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client() : _registered(false), _allowed(false) {}
+Client::Client() : _registered(false), _allowed(false) { this->_buffer.clear();}
 
 Client::~Client() {}
 
@@ -51,7 +51,22 @@ void
 Client::addBuffer(std::string buffer) { this->_buffer += buffer; }
 
 void
-Client::clearBuffer() { this->_buffer.clear(); }
+Client::clearBuffer() {
+	size_t pos = MessageParser::findLastOf(this->_buffer, CRLF);
+	// std::cout << "pos:" << pos << std::endl;
+	// std::cout << "buffer size:" << this->_buffer.size() << std::endl;
+
+	if (pos == this->_buffer.size() - CRLF.length())
+		return this->_buffer.clear();
+	
+	// std::cout << "buffer before:" << _buffer << std::endl;
+
+	this->_buffer.replace(0, pos, &this->_buffer[pos + CRLF.length()]);
+	this->_buffer.erase(this->_buffer.begin() + pos, this->_buffer.end());
+
+	// std::cout << "buffer after:" << _buffer << std::endl;
+
+}
 
 void
 Client::setRegistered(bool state) { this->_registered = state; }

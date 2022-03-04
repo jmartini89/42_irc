@@ -27,8 +27,8 @@ struct Message
 	std::vector<std::string>	parameters;
 };
 
-#include "Client.hpp"
 class Server;
+class Client;
 
 typedef std::map<std::string, int> enumMap;
 
