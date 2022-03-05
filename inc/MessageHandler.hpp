@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <map>
 
+#define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
+
 enum Commands {
 	UNDEFINED,
 	NICK,
@@ -63,22 +65,23 @@ class MessageHandler
 		void	_passCmd();
 		void	_pongCmd();
 
-		void	_welcomeReply();
-		Client	*_findClient(std::string nick);
+		void		_register();
+		void		_welcomeReply();
+		Client *	_findClient(std::string nick);
 
 };
 
 static enumMap _initMap() {
 	enumMap aMap;
-	aMap["UNDEFINED"] = UNDEFINED;
-	aMap["NICK"] = NICK;
-	aMap["USER"] = USER;
-	aMap["JOIN"] = JOIN;
-	aMap["PRIVMSG"] = PRIVMSG;
-	aMap["NOTICE"] = NOTICE;
-	aMap["PING"] = PING;
-	aMap["PONG"] = PONG;
-	aMap["PASS"] = PASS;
+	aMap["UNDEFINED"] =	UNDEFINED;
+	aMap["NICK"] =		NICK;
+	aMap["USER"] =		USER;
+	aMap["JOIN"] =		JOIN;
+	aMap["PRIVMSG"] =	PRIVMSG;
+	aMap["NOTICE"] =	NOTICE;
+	aMap["PING"] =		PING;
+	aMap["PONG"] =		PONG;
+	aMap["PASS"] =		PASS;
 	return aMap;
 };
 

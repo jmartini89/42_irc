@@ -4,7 +4,7 @@ Server::Server(const unsigned int port, std::string password)
 : _password(password) {
 
 	std::time_t now = std::time(nullptr);
-    this->_creationDate = std::asctime(std::localtime(&now));
+	this->_creationDate = std::asctime(std::localtime(&now));
 	this->_creationDate.pop_back();
 
 	this->_fdListen = socket(AF_INET, SOCK_STREAM, 0);

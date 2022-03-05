@@ -63,26 +63,26 @@ void MessageHandler::_nickCmd()
 {
 	if (this->_message.parameters.size() < 2) return serverReply(ERR_NONICKNAMEGIVEN);
 
-	if (this->_findClient(this->_message.parameters[1]))
+	if (this->_findClient(this->_message.parameters[1])
+		&& this->_findClient(this->_message.parameters[1]) != this->_client)
 			return serverReply(ERR_NICKNAMEINUSE);
 
+	std::string oldNick =this->_client->getNick();
 	this->_client->setNick(this->_message.parameters[1]);
 
-	if (!this->_client->isRegistered() && this->_client->isUser()) {
-		if (!this->_client->isAllowed())
-			return 	serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
-		this->_client->setRegistered(true);
-		this->_welcomeReply();
-	}
-	else if (this->_client->isUser()) {
-		// TODO : BROADCAST
+	if (!this->_client->isRegistered() && this->_client->isUser()) this->_register();
+	else if (this->_client->isRegistered()) {
+		// BROADCAST : CLIENT && client's joined CHANNELS
+		std::string msg = defHeader + " " + "NICK" + " " + this->_message.parameters[1];
+		msg.replace(1, this->_client->getNick().size(), oldNick);
+		this->sendMsg(this->_client->getFdSocket(), msg);
 	}
 }
 
 void MessageHandler::_userCmd()
 {
 	if (this->_message.parameters.size() < 5) return serverReply(ERR_NEEDMOREPARAMS);
-	if (this->_client->isUser()) return serverReply(ERR_ALREADYREGISTRED); //FIXME(?) check isRegistered() and not isUser
+	if (this->_client->isUser()) return serverReply(ERR_ALREADYREGISTRED);
 
 	this->_client->setUser(this->_message.parameters[1]);
 
@@ -92,12 +92,7 @@ void MessageHandler::_userCmd()
 		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
-	if (!this->_client->getNick().empty()) {
-		if (!this->_client->isAllowed())
-			return 	serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
-		this->_client->setRegistered(true);
-		return this->_welcomeReply();
-	}
+	if (!this->_client->getNick().empty()) this->_register();
 }
 
 void	MessageHandler::_passCmd()
@@ -106,6 +101,9 @@ void	MessageHandler::_passCmd()
 		return serverReply(ERR_NEEDMOREPARAMS);
 	if (this->_client->isRegistered())
 		return serverReply(ERR_ALREADYREGISTRED);
+
+	if (this->_message.parameters[1][0] == ':') this->_message.parameters[1].erase(0, 1);
+
 	if (this->_server->checkPwd(this->_message.parameters[1]))
 		this->_client->setAllowed(true);
 	else
@@ -139,9 +137,7 @@ void MessageHandler::_prvMsgCmd(bool isNotice)
 	if (target.c_str()[0] == '#')
 		;  //TODO handle # for channels
 
-	std::string header = ":" + this->_client->getNick() 
-						+ "!" + this->_client->getUser() 
-						+ "@" + this->_client->getHostname() 
+	std::string header = defHeader
 						+ " " + this->_message.parameters[0] + " "
 						+ target;
 	std::string text = " :" + paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
@@ -161,13 +157,11 @@ void MessageHandler::_pongCmd() {
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
-Client *
-MessageHandler::_findClient(std::string nick)
-{
-	for (size_t i = 0; i < this->_clientVector.size(); i++)
-		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
-			return this->_clientVector[i];
-	return (NULL);
+void MessageHandler::_register() {
+	if (!this->_client->isAllowed())
+		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
+	this->_client->setRegistered(true);
+	return this->_welcomeReply();
 }
 
 void MessageHandler::_welcomeReply() {
@@ -175,6 +169,15 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_YOURHOST);
 	serverReply(RPL_CREATED);
 	serverReply(RPL_MYINFO);
+}
+
+Client *
+MessageHandler::_findClient(std::string nick)
+{
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
+		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
+			return this->_clientVector[i];
+	return (NULL);
 }
 
 void
