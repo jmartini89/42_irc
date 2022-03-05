@@ -37,7 +37,7 @@ typedef std::map<std::string, int> enumMap;
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector, Server *server);
+		MessageHandler(std::list<Message> msgList, Client * client, Server *server);
 		~MessageHandler();
 
 		void	operator()(struct Message msg);

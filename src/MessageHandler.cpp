@@ -3,12 +3,12 @@
 #include "Reply.hpp"
 
 //TODO use client and clientVector from server
-MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector, Server * server)
+MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, Server * server)
 {
 	this->_msgList = msgList;
 	this->_client = client;
-	this->_clientVector = clientVector;
 	this->_server = server;
+	this->_clientVector = server->getClientVector();
 }
 
 MessageHandler::~MessageHandler(){};
@@ -134,7 +134,7 @@ void MessageHandler::_prvMsgCmd(bool isNotice)
 	}
 	
 	std::string target = this->_message.parameters[1];
-	if (target.c_str()[0] == '#')
+	if (target[0] == '#')
 		;  //TODO handle # for channels
 
 	std::string header = defHeader

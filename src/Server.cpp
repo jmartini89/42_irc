@@ -29,16 +29,15 @@ Server::Server(const unsigned int port, std::string password)
 }
 
 void
-Server::_constructErr(std::string errstr)
-{
+Server::_constructErr(std::string errstr) {
 	close(this->_fdListen);
 	throw std::runtime_error(errstr);
 }
 
-Server::~Server() 
-{
+Server::~Server() {
 	close(this->_fdListen);
-	//TODO delete client
+	for (int i = 0; i < this->_clientVector.size(); i++)
+		delete this->_clientVector[i];
 }
 
 void
@@ -83,6 +82,36 @@ Server::run()
 		}
 	}
 }
+
+
+/*
+* runtime methods
+*/
+
+Client *
+Server::findClient(int eventFd)
+{
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
+		if (eventFd == this->_clientVector[i]->getFdSocket())
+			return this->_clientVector[i];
+	throw std::runtime_error("findClient: client not found");
+}
+
+bool Server::checkPwd(std::string password) { return (this->_password == password); }
+
+
+/*
+/* getters
+*/
+
+std::vector<Client *> Server::getClientVector() { return this->_clientVector; }
+
+std::string Server::getCreationDate() const { return this->_creationDate; }
+
+
+/*
+* private
+*/
 
 void	Server::_addClient()
 {
@@ -142,26 +171,7 @@ Server::_eventClientHandler(int eventFd)
 	}
 	else client->clearBuffer();
 
-	MessageHandler msgHandler(msgList, client, this->_clientVector, this);
+	MessageHandler msgHandler(msgList, client, this);
 	std::cout << msgHandler;
 	for_each (msgList.begin(), msgList.end(), msgHandler);
-}
-
-Client *
-Server::findClient(int eventFd)
-{
-	for (size_t i = 0; i < this->_clientVector.size(); i++)
-		if (eventFd == this->_clientVector[i]->getFdSocket())
-			return this->_clientVector[i];
-	throw std::runtime_error("findClient: client not found");
-}
-
-std::string		Server::getCreationDate() const
-{ 
-	return this->_creationDate;
-}
-
-bool		Server::checkPwd(std::string password)
-{
-	return (this->_password == password);
 }

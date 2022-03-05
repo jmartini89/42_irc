@@ -33,9 +33,14 @@ class Server
 		Server(const unsigned int port, std::string password);
 		~Server();
 		void		run();
+
+		/* runtime methods */
 		Client *	findClient(int eventFd);
-		std::string	getCreationDate() const;
 		bool		checkPwd(std::string password);
+
+		/* getters */
+		std::vector<Client *>	getClientVector();
+		std::string				getCreationDate() const;
 		
 	private:
 		Server() {};
