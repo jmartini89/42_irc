@@ -13,13 +13,12 @@
 #define PORT 8080
 #define SA struct sockaddr
 
-std::string multiFinder(std::string buffer, std::string from, std::string to) {
+void replaceMulti(std::string & buffer, std::string from, std::string to) {
 	for (std::string::size_type it = 0; (it = buffer.find(from, it)) != std::string::npos;)
 	{
 		buffer.replace(it, from.size(), to);
 		it += to.size();
 	}
-	return buffer;
 }
 
 void func(int sockfd)
@@ -30,8 +29,8 @@ void func(int sockfd)
 
 		buffer.erase(buffer.end());
 
-		buffer = multiFinder(buffer, "CR", "\r");
-		buffer = multiFinder(buffer, "LF", "\n");
+		replaceMulti(buffer, "CR", "\r");
+		replaceMulti(buffer, "LF", "\n");
 
 		send(sockfd, buffer.c_str(), buffer.size(), 0);
 	}
