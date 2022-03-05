@@ -1,1 +1,1 @@
-rsync -aE ~/coding/irc jacopomartini@bendermac:~/coding
+rsync -aE $1 ~/coding/irc jacopomartini@bendermac:~/coding

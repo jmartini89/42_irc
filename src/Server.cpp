@@ -118,35 +118,33 @@ void
 Server::_eventClientHandler(int eventFd)
 {
 	Client * client = this->findClient(eventFd);
+
 	char buffer[BUFFER_SIZE];
-
 	bzero(buffer, BUFFER_SIZE);
+
 	size_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
-	std::string bufferStr = client->getBuffer() + static_cast<std::string>(buffer);
+	if (bytes_read == -1) return;
+	else if (bytes_read == 0) return;
 
-	client->addBuffer(buffer);
+	client->replaceBuffer(client->getBuffer() + static_cast<std::string>(buffer));
 
-	std::cout << "entry" << std::endl;
+	// EOT not found
+	if (client->getBuffer().find(CRLF) == std::string::npos) return;
 
-	// TODO : clear buffer only until last CRLF
-	// for example : cmd params CLRF cmd params (END OF MESSAGE FOR REASONS) -> 2nd part should be kept
-	if (client->getBuffer().find(CRLF) == std::string::npos)
-		return;
+	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
 
-	//  std::cout << "buffer before before:" << bufferStr.substr(0, MessageParser::findLastOf(bufferStr, CRLF) + 1);
-
-	std::list<Message> msgList = MessageParser::parseMsg(bufferStr.substr(0, MessageParser::findLastOf(bufferStr, CRLF) + CRLF.length()));
-	// std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
-
-	// if (MessageParser::findLastOf(client->getBuffer(), CRLF) == client->getBuffer().length() - CRLF.length())
+	// EOT with buffer remainder
+	if (MessageParser::findLastOf(client->getBuffer(), CRLF) != client->getBuffer().length() - CRLF.length()) {
+		client->clearBuffer();
+		for (int i = 0; i < msgList.back().parameters.size(); i++)
+			client->addBuffer(msgList.back().parameters[i] + " ");
+		msgList.pop_back();
+	}
+	else client->clearBuffer();
 
 	MessageHandler msgHandler(msgList, client, this->_clientVector, this);
-
-	std::cout << msgHandler; // DEBUG
-
+	std::cout << msgHandler;
 	for_each (msgList.begin(), msgList.end(), msgHandler);
-
-	client->clearBuffer();
 }
 
 Client *

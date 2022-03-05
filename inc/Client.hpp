@@ -49,6 +49,7 @@ class Client
 		void				setFdSocket(int fdSocket);
 
 		void				addBuffer(std::string buffer);
+		void				replaceBuffer(std::string buffer);
 		void				clearBuffer();
 
 		void				setRegistered(bool state);
