@@ -36,7 +36,7 @@ Server::_constructErr(std::string errstr) {
 
 Server::~Server() {
 	close(this->_fdListen);
-	for (int i = 0; i < this->_clientVector.size(); i++)
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		delete this->_clientVector[i];
 }
 
@@ -46,40 +46,42 @@ Server::run()
 	listen(this->_fdListen, BACKLOG_IRC);
 
 	this->_kQueue = kqueue();
-	this->_monitorEvent.push_back(t_kevent());
-	this->_triggerEvent.push_back(t_kevent());
 
-	EV_SET(&this->_monitorEvent[0], this->_fdListen,
+	// signal(SIGINT, SIG_IGN);
+	// EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+	// if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+	// 	throw std::runtime_error("kevent function failed");
+
+	EV_SET(&this->_monitorEvent, this->_fdListen,
 		EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) == -1)
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
 		throw std::runtime_error("kevent function failed");
 
 	while(true)
 	{
-		int newEvents = kevent(this->_kQueue, NULL, 0, &this->_triggerEvent[0], 1, NULL);
+		int newEvents = kevent(this->_kQueue, NULL, 0, &this->_triggerEvent, 1, NULL);
 		if (newEvents == -1)
 			throw std::runtime_error("kevent function failed");
 
-		for (int i = 0; i < newEvents && i < 1; i++)
+		int eventFd = this->_triggerEvent.ident;
+
+		if (this->_triggerEvent.flags & EV_EOF)
 		{
-			int eventFd = this->_triggerEvent[i].ident;
-
-			if (this->_triggerEvent[i].flags & EV_EOF)
-			{
-				// TODO : BROADCAST + (DELETE?) + ETC ...
-				Client *client = this->findClient(eventFd);
-				client->setFdSocket(-1);
-				std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
-				close(eventFd);
-			}
-
-			else if (eventFd == this->_fdListen)
-				_addClient();
-
-			else if (this->_triggerEvent[i].filter & EVFILT_READ)
-				_eventClientHandler(eventFd);
+			// TODO : BROADCAST + (DELETE?) + ETC ...
+			Client *client = this->findClient(eventFd);
+			client->setFdSocket(-1);
+			std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
+			close(eventFd);
 		}
+
+		else if (eventFd == this->_fdListen)
+			_addClient();
+
+		else if (this->_triggerEvent.filter & EVFILT_READ)
+			_eventClientHandler(eventFd);
+
+		// else if (this->_triggerEvent.filter & EVFILT_SIGNAL)
+		// 	std::cout << "SIGINT" << std::endl;
 	}
 }
 
@@ -101,7 +103,7 @@ bool Server::checkPwd(std::string password) { return (this->_password == passwor
 
 
 /*
-/* getters
+* getters
 */
 
 std::vector<Client *> Server::getClientVector() { return this->_clientVector; }
@@ -134,8 +136,9 @@ void	Server::_addClient()
 	else
 		client->setHostname(inet_ntoa(client->getAddressPointer()->sin_addr));
 
-	EV_SET(&this->_monitorEvent[0], client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
+	EV_SET(&this->_monitorEvent, client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent function failed");
 
 	this->_clientVector.push_back(client);

@@ -25,8 +25,6 @@
 #include "MessageParser.hpp"
 #include "Reply.hpp"
 
-typedef struct kevent t_kevent;
-
 class Server
 {
 	public:
@@ -51,8 +49,9 @@ class Server
 
 		int				_kQueue;
 
-		std::vector<t_kevent>	_monitorEvent;
-		std::vector<t_kevent>	_triggerEvent;
+		struct kevent	_monitorEvent;
+		// struct kevent	_signalEvent;
+		struct kevent	_triggerEvent;
 		std::vector<Client *>	_clientVector;
 
 		void	_addClient();
