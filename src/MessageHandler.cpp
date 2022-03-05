@@ -3,9 +3,8 @@
 #include "Reply.hpp"
 
 //TODO use client and clientVector from server
-MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, Server * server)
+MessageHandler::MessageHandler(Client * client, Server * server)
 {
-	this->_msgList = msgList;
 	this->_client = client;
 	this->_server = server;
 	this->_clientVector = server->getClientVector();
@@ -13,30 +12,12 @@ MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, Serv
 
 MessageHandler::~MessageHandler(){};
 
-std::list<Message> *MessageHandler::getMsgList() { return &(this->_msgList); }
 
 //operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
 {
 	this->_message = msg;
 	handleMsg();
-}
-
-std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
-{
-	for (std::list<Message>::iterator it = mh.getMsgList()->begin(); it != mh.getMsgList()->end(); it++) 
-		os << *it;
-	return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Message& m)
-{
-	os << "Command: " << m.cmd << "\n";
-	os << "Parameters: ";
-	for (size_t i = 0; i < m.parameters.size(); i++)
-		os << m.parameters[i] << " ";
-	os << std::endl;
-	return os;
 }
 
 void MessageHandler::handleMsg()
@@ -63,8 +44,8 @@ void MessageHandler::_nickCmd()
 {
 	if (this->_message.parameters.size() < 2) return serverReply(ERR_NONICKNAMEGIVEN);
 
-	if (this->_findClient(this->_message.parameters[1])
-		&& this->_findClient(this->_message.parameters[1]) != this->_client)
+	if (this->_server->findClient(this->_message.parameters[1])
+		&& this->_server->findClient(this->_message.parameters[1]) != this->_client)
 			return serverReply(ERR_NICKNAMEINUSE);
 
 	std::string oldNick =this->_client->getNick();
@@ -142,7 +123,7 @@ void MessageHandler::_prvMsgCmd(bool isNotice)
 						+ target;
 	std::string text = " :" + paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
 
-	Client *targetClient = this->_findClient(target);
+	Client *targetClient = this->_server->findClient(target);
 	if (!targetClient) {
 		if (isNotice) return;
 		return (serverReply(ERR_NOSUCHNICK, target));
@@ -171,15 +152,6 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_MYINFO);
 }
 
-Client *
-MessageHandler::_findClient(std::string nick)
-{
-	for (size_t i = 0; i < this->_clientVector.size(); i++)
-		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
-			return this->_clientVector[i];
-	return (NULL);
-}
-
 void
 MessageHandler::serverReply(int code, std::string target)
 {
@@ -201,7 +173,6 @@ MessageHandler::serverReply(int code, std::string target)
 	MessageParser::replace(reply, "<available user modes>", USER_MODES);
 	MessageParser::replace(reply, "<available channel modes>", CHANNEL_MODES);
 	MessageParser::replace(reply, "<nickname>", target);
-
 
 	// Client *targetClient = _findClient(target);
 	// if (targetClient)

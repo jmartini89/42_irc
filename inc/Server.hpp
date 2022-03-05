@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 
 #include "Defines.hpp"
 #include "Client.hpp"
@@ -32,8 +33,9 @@ class Server
 		~Server();
 		void		run();
 
-		/* runtime methods */
+		/* runtime */
 		Client *	findClient(int eventFd);
+		Client *	findClient(std::string nick);
 		bool		checkPwd(std::string password);
 
 		/* getters */
@@ -44,20 +46,21 @@ class Server
 		Server() {};
 		std::string		_password;
 		std::string 	_creationDate;
+
 		int					_fdListen;
 		struct sockaddr_in	_address;
 
 		int				_kQueue;
-
 		struct kevent	_monitorEvent;
-		// struct kevent	_signalEvent;
 		struct kevent	_triggerEvent;
+
 		std::vector<Client *>	_clientVector;
 
 		void	_addClient();
-		void	_constructErr(std::string errstr);
-
 		void	_eventClientHandler(int eventFd);
+
+		void	_setSignals();
+		void	_debugMsgList(std::list<Message> msgList);
 };
 
 #endif

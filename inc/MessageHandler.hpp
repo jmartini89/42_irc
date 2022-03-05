@@ -37,7 +37,7 @@ typedef std::map<std::string, int> enumMap;
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message> msgList, Client * client, Server *server);
+		MessageHandler(Client * client, Server *server);
 		~MessageHandler();
 
 		void	operator()(struct Message msg);
@@ -48,13 +48,9 @@ class MessageHandler
 		void	serverReply(int code, std::string target);
 		void	sendMsg(int fd, std::string message);
 
-		//Getters
-		std::list<Message> *getMsgList(); // REDUNDANT ?
-
 	private :
 		std::vector<Client *>	_clientVector;
 		Client *				_client;
-		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
 		Server					*_server;
 
@@ -67,8 +63,6 @@ class MessageHandler
 
 		void		_register();
 		void		_welcomeReply();
-		Client *	_findClient(std::string nick);
-
 };
 
 static enumMap _initMap() {
@@ -86,7 +80,5 @@ static enumMap _initMap() {
 };
 
 const enumMap cmdMap = _initMap();
-std::ostream& operator<<(std::ostream& os, MessageHandler& mh);
-std::ostream& operator<<(std::ostream& os, const Message& m);
 
 #endif
