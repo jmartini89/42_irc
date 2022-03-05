@@ -15,7 +15,7 @@ class MessageParser
 	public:
 		static std::string toUpperStr(std::string str) {
 			std::string ret;
-			for (int i = 0; i < str.size(); i++)
+			for (size_t i = 0; i < str.size(); i++)
 				ret +=  std::toupper(str[i]);
 			return ret;
 		}
@@ -32,10 +32,10 @@ class MessageParser
 			std::vector<std::string> ret;
 			std::string word;
 
-			for(int i = 0; i < str.size(); i += word.size() + delimeter.size())
+			for(size_t i = 0; i < str.size(); i += word.size() + delimeter.size())
 			{
-				size_t	posSpace = str.find(delimeter, i + delimeter.size());
-				if (posSpace == -1) posSpace = str.size();
+				size_t posSpace = str.find(delimeter, i + delimeter.size());
+				if (posSpace == std::string::npos) posSpace = str.size();
 
 				word = str.substr(i, posSpace - i);
 				if (word.size() == 0) break;
@@ -53,7 +53,7 @@ class MessageParser
 			std::list<Message> msgList;
 			std::vector<std::string> message = split(buffer, CRLF);
 
-			for (int i = 0; i < message.size(); i++) {
+			for (size_t i = 0; i < message.size(); i++) {
 				struct Message msg;
 
 				std::string lastParameter;
@@ -79,7 +79,7 @@ class MessageParser
 		static bool replace(std::string& str, std::string from, std::string to)
 		{
 			size_t start = str.find(from);
-			if(start == -1)
+			if(start == std::string::npos)
 				return false;
 			str.replace(start, from.length(), to);
 			return true;
@@ -90,7 +90,7 @@ class MessageParser
 			size_t pos = 0;
 			for (size_t tmp = 0; pos < haystack.size();) {
 				tmp = haystack.find(needle, tmp);
-				if (tmp == -1)
+				if (tmp == std::string::npos)
 					break;
 				pos = tmp;
 				tmp += needle.length();

@@ -122,7 +122,7 @@ Server::_eventClientHandler(int eventFd)
 	char buffer[BUFFER_SIZE];
 	bzero(buffer, BUFFER_SIZE);
 
-	size_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
+	ssize_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
 	if (bytes_read == -1) return;
 	else if (bytes_read == 0) return;
 
@@ -134,9 +134,9 @@ Server::_eventClientHandler(int eventFd)
 	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
 
 	// EOT with buffer remainder
-	if (MessageParser::findLastOf(client->getBuffer(), CRLF) != client->getBuffer().length() - CRLF.length()) {
+	if (MessageParser::findLastOf(client->getBuffer(), CRLF) != int(client->getBuffer().length() - CRLF.length())) {
 		client->clearBuffer();
-		for (int i = 0; i < msgList.back().parameters.size(); i++)
+		for (size_t i = 0; i < msgList.back().parameters.size(); i++)
 			client->addBuffer(msgList.back().parameters[i] + " ");
 		msgList.pop_back();
 	}
@@ -150,7 +150,7 @@ Server::_eventClientHandler(int eventFd)
 Client *
 Server::findClient(int eventFd)
 {
-	for (int i = 0; i < this->_clientVector.size(); i++)
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		if (eventFd == this->_clientVector[i]->getFdSocket())
 			return this->_clientVector[i];
 	throw std::runtime_error("findClient: client not found");

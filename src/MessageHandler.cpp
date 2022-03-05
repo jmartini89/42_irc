@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, const Message& m)
 {
 	os << "Command: " << m.cmd << "\n";
 	os << "Parameters: ";
-	for (int i = 0; i < m.parameters.size(); i++)
+	for (size_t i = 0; i < m.parameters.size(); i++)
 		os << m.parameters[i] << " ";
 	os << std::endl;
 	return os;
@@ -88,7 +88,7 @@ void MessageHandler::_userCmd()
 
 	std::string realName;
 	if (this->_message.parameters[4][0] == ':') this->_message.parameters[4].erase(0, 1);
-	for (int i = 4; i < this->_message.parameters.size(); i++)
+	for (size_t i = 4; i < this->_message.parameters.size(); i++)
 		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
@@ -164,7 +164,7 @@ void MessageHandler::_pongCmd() {
 Client *
 MessageHandler::_findClient(std::string nick)
 {
-	for (int i = 0; i < this->_clientVector.size(); i++)
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
 			return this->_clientVector[i];
 	return (NULL);

@@ -2,7 +2,7 @@ NAME = irc
 CC = clang++
 CFLAGS = $(CSTD) $(CWARN) $(HEADERS)
 CSTD = -std=c++98
-CWARN = #-Wall -Werror -Wextra
+CWARN = -Wall -Werror -Wextra
 HEADERS = -I./inc
 DEBUG = -g
 DEBUG_ADDR = -fsanitize=address
@@ -35,6 +35,11 @@ debug : all
 leak : CFLAGS += $(DEBUG) $(DEBUG_ADDR)
 leak : all
 	@echo "\033[31mDEBUG ADDRESS\033[0m"
+
+bin/testClient : testClient.cpp
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -o $@ $^
+	@echo "\033[32m"$@" compiled successfully\033[0m"
 
 #Link
 $(TARGET) : $(OBJECTS)

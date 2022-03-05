@@ -20,7 +20,7 @@ class Client
 		std::string			_nick;
 		std::string			_user;
 		std::string			_realName;
-		int					_userMode;
+		// int					_userMode;
 		bool				_allowed;
 
 	public:
