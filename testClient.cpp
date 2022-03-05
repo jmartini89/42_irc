@@ -13,14 +13,14 @@
 #define PORT 8080
 #define SA struct sockaddr
 
-static bool replace(std::string& str, std::string from, std::string to)
-{
-	size_t start = str.find(from);
-	if(start == -1)
-		return false;
-	str.replace(start, from.length(), to);
-	return true;
-};
+std::string multiFinder(std::string buffer, std::string from, std::string to) {
+	for (std::string::size_type it = 0; (it = buffer.find(from, it)) != std::string::npos;)
+	{
+		buffer.replace(it, from.size(), to);
+		it += to.size();
+	}
+	return buffer;
+}
 
 void func(int sockfd)
 {
@@ -30,13 +30,10 @@ void func(int sockfd)
 
 		buffer.erase(buffer.end());
 
-		// works only with one CRLF per line
-		// wasted way too much time for multiples inline, fuckit
-		// works tho
-		replace(buffer, "CR", "\r");
-		replace(buffer, "LF", "\n");
+		buffer = multiFinder(buffer, "CR", "\r");
+		buffer = multiFinder(buffer, "LF", "\n");
 
-		send(sockfd, buffer.c_str(), sizeof(buffer), 0);
+		send(sockfd, buffer.c_str(), buffer.size(), 0);
 	}
 }
 
