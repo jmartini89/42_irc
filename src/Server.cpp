@@ -102,6 +102,7 @@ void Server::removeChannel(Channel * channel) {
 	for (std::vector<Channel *>::iterator it = this->_channelVector.begin(); it < this->_channelVector.end(); it++)
 		if ((*it) == channel) {
 			this->_channelVector.erase(it);
+			delete (*it);
 			return;
 		}
 	std::cerr << "removeChannel failed" << std::endl;

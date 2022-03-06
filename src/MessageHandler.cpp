@@ -12,8 +12,6 @@ MessageHandler::MessageHandler(Client * client, Server * server)
 
 MessageHandler::~MessageHandler(){};
 
-
-//operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
 {
 	this->_message = msg;
@@ -32,14 +30,17 @@ void MessageHandler::handleMsg()
 		case USER:		_userCmd(); break;
 		case JOIN:		_joinCmd(); break;
 		case PART:		_partCmd(); break;
-		case PRIVMSG:	_prvMsgCmd(false); break;
-		case NOTICE:	_prvMsgCmd(true); break;
+		case PRIVMSG:	_privMsgCmd(false); break;
+		case NOTICE:	_privMsgCmd(true); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
+
+
+/* Commands */
 
 void MessageHandler::_nickCmd()
 {
@@ -77,7 +78,7 @@ void MessageHandler::_userCmd()
 	if (!this->_client->getNick().empty()) this->_register();
 }
 
-void	MessageHandler::_passCmd()
+void MessageHandler::_passCmd()
 {
 	if (this->_message.parameters.size() == 1)
 		return serverReply(ERR_NEEDMOREPARAMS);
@@ -126,7 +127,7 @@ void MessageHandler::_partCmd() {
 	channel->part(this->_client);
 
 	// Once all users in a channel have left that channel, the channel must be destroyed.
-	if (channel->isEmpty()) delete channel;
+	if (channel->isEmpty()) this->_server->removeChannel(channel);
 }
 
 static std::string paramAsStr(std::vector<std::string>::iterator iter,
@@ -138,7 +139,7 @@ static std::string paramAsStr(std::vector<std::string>::iterator iter,
 	return str;
 }
 
-void MessageHandler::_prvMsgCmd(bool isNotice)
+void MessageHandler::_privMsgCmd(bool isNotice)
 {
 	if (this->_message.parameters.size() == 1) {
 		if (isNotice) return;
@@ -173,6 +174,9 @@ void MessageHandler::_pongCmd() {
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
+
+/* Server Operations */
+
 void MessageHandler::_register() {
 	if (!this->_client->isAllowed())
 		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
@@ -187,8 +191,7 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_MYINFO);
 }
 
-void
-MessageHandler::serverReply(int code, std::string target)
+void MessageHandler::serverReply(int code, std::string target)
 {
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -218,13 +221,9 @@ MessageHandler::serverReply(int code, std::string target)
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
-void
-MessageHandler::serverReply(int code) {
-	serverReply(code, "");
-}
+void MessageHandler::serverReply(int code) { serverReply(code, ""); }
 
-void
-MessageHandler::sendMsg(int fd, std::string message) {
+void MessageHandler::sendMsg(int fd, std::string message) {
 	message += CRLF;
 	send(fd, message.c_str(), message.size(), 0);
 }

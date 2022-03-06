@@ -55,14 +55,16 @@ class MessageHandler
 		Message					_message;
 		Server *				_server;
 
+		/* Commands */
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_partCmd();
-		void	_prvMsgCmd(bool isNotice);
+		void	_privMsgCmd(bool isNotice);
 		void	_passCmd();
 		void	_pongCmd();
 
+		/* Server operations */
 		void		_register();
 		void		_welcomeReply();
 };
