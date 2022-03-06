@@ -5,7 +5,6 @@
 #define HOSTNAME_LEN 64
 #define BUFFER_SIZE 1024
 #define IRC_NAME std::string("42IRC")
-// #define CRLF std::string(".,")
 #define CRLF std::string("\r\n")
 #define VERSION std::string("1.0")
 #define USER_MODES std::string("o") 

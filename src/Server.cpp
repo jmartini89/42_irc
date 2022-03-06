@@ -134,7 +134,6 @@ void Server::_addClient()
 		client->setHostname(inet_ntoa(client->getAddressPointer()->sin_addr));
 
 	EV_SET(&this->_monitorEvent, client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-
 	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent function failed");
 
