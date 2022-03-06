@@ -15,6 +15,7 @@ enum Commands {
 	NICK,
 	USER,
 	JOIN,
+	PART,
 	PRIVMSG,
 	NOTICE,
 	PING,
@@ -52,11 +53,12 @@ class MessageHandler
 		std::vector<Client *>	_clientVector;
 		Client *				_client;
 		Message					_message;
-		Server					*_server;
+		Server *				_server;
 
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
+		void	_partCmd();
 		void	_prvMsgCmd(bool isNotice);
 		void	_passCmd();
 		void	_pongCmd();
@@ -71,6 +73,7 @@ static enumMap _initMap() {
 	aMap["NICK"] =		NICK;
 	aMap["USER"] =		USER;
 	aMap["JOIN"] =		JOIN;
+	aMap["PART"] =		PART;
 	aMap["PRIVMSG"] =	PRIVMSG;
 	aMap["NOTICE"] =	NOTICE;
 	aMap["PING"] =		PING;

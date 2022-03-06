@@ -22,6 +22,7 @@
 
 #include "Defines.hpp"
 #include "Client.hpp"
+#include "Channel.hpp"
 #include "MessageHandler.hpp"
 #include "MessageParser.hpp"
 #include "Reply.hpp"
@@ -31,15 +32,22 @@ class Server
 	public:
 		Server(const unsigned int port, std::string password);
 		~Server();
-		void		run();
+		void	run();
 
+		/* Server Properties */
+		bool		checkPwd(std::string password);
+		std::string	getCreationDate() const;
+
+		/* Clients */
 		Client *	findClient(int eventFd);
 		Client *	findClient(std::string nick);
-		bool		checkPwd(std::string password);
-
-		/* getters */
 		std::vector<Client *>	getClientVector();
-		std::string				getCreationDate() const;
+
+		/* Channels */
+		void		addChannel(Channel * channel);
+		void		removeChannel(Channel * channel);
+		Channel *	findChannel(std::string name);
+		std::vector<Channel *>	getChannelVector();
 		
 	private:
 		Server() {};
@@ -54,12 +62,13 @@ class Server
 		struct kevent	_triggerEvent;
 
 		std::vector<Client *>	_clientVector;
+		std::vector<Channel *>	_channelVector;
 
 		void	_setKevents();
 
 		void	_addClient();
 		void	_closeClient(int eventFd);
-		void	_eventClientHandler(int eventFd);
+		void	_messageHandler(int eventFd);
 
 		void	_debugMsgList(std::list<Message> msgList, int eventFd);
 };

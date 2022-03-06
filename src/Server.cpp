@@ -56,12 +56,22 @@ void Server::run()
 			case EVFILT_READ:
 				if (eventFlags & EV_EOF) this->_closeClient(eventFd);
 				else if (eventFd == this->_fdListen) this->_addClient();
-				else this->_eventClientHandler(eventFd);
+				else this->_messageHandler(eventFd);
 
 			default: break;
 		}
 	}
 }
+
+
+/* Server Properties */
+
+bool Server::checkPwd(std::string password) { return (this->_password == password); }
+
+std::string Server::getCreationDate() const { return this->_creationDate; }
+
+
+/* Clients */
 
 Client * Server::findClient(int eventFd)
 {
@@ -79,14 +89,33 @@ Client * Server::findClient(std::string nick)
 	return (NULL);
 }
 
-bool Server::checkPwd(std::string password) { return (this->_password == password); }
-
-
-/* getters */
-
 std::vector<Client *> Server::getClientVector() { return this->_clientVector; }
 
-std::string Server::getCreationDate() const { return this->_creationDate; }
+
+/* Channels */
+
+void Server::addChannel(Channel * channel) {
+	this->_channelVector.push_back(channel);
+}
+
+void Server::removeChannel(Channel * channel) {
+	for (std::vector<Channel *>::iterator it = this->_channelVector.begin(); it < this->_channelVector.end(); it++)
+		if ((*it) == channel) {
+			this->_channelVector.erase(it);
+			return;
+		}
+	std::cerr << "removeChannel failed" << std::endl;
+}
+
+Channel * Server::findChannel(std::string name) {
+	for (size_t it = 0; it < this->_channelVector.size(); it++) {
+		if (*this->_channelVector[it] == name)
+			return this->_channelVector[it];
+	}
+	return NULL;
+}
+
+std::vector<Channel *> Server::getChannelVector() {}
 
 
 /* private */
@@ -144,14 +173,14 @@ void Server::_addClient()
 
 void Server::_closeClient(int eventFd)
 {
-	// TODO : BROADCAST + (DELETE?) + ETC ...
+	// TODO : QUIT CMD (&& PART CMD ALL JOINED CHANNELS)
 	Client *client = this->findClient(eventFd);
 	client->setFdSocket(-1);
 	std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
 	close(eventFd);
 }
 
-void Server::_eventClientHandler(int eventFd)
+void Server::_messageHandler(int eventFd)
 {
 	Client * client = this->findClient(eventFd);
 

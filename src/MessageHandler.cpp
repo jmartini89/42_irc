@@ -31,6 +31,7 @@ void MessageHandler::handleMsg()
 		case NICK:		_nickCmd(); break;
 		case USER:		_userCmd(); break;
 		case JOIN:		_joinCmd(); break;
+		case PART:		_partCmd(); break;
 		case PRIVMSG:	_prvMsgCmd(false); break;
 		case NOTICE:	_prvMsgCmd(true); break;
 		case PING:		_pongCmd(); break;
@@ -91,8 +92,42 @@ void	MessageHandler::_passCmd()
 		this->_client->setAllowed(false); //needed in case more pwd commands are sent (only the last one must be used)
 }
 
-void MessageHandler::_joinCmd()
-{}
+void MessageHandler::_joinCmd() {
+
+	// MESSAGE STUFF
+	std::string channelName = "TODO";
+	std::string channelKey = "TODO"; // if empty channel sets as not protected
+	bool op = false;
+
+	Channel * channel = this->_server->findChannel(channelName);
+	if (channel == NULL) {
+		channel = new Channel(channelName, channelKey);
+		this->_server->addChannel(channel);
+		op = true;
+	}
+
+	if (channel->getClients().find(this->_client) != channel->getClients().end()) {
+		; // TODO : client already joined
+	}
+
+	if (!channel->join(this->_client, op, channelKey)) ; // wrong key reply
+}
+
+void MessageHandler::_partCmd() {
+
+	// MESSAGE STUFF
+	std::string channelName = "TODO";
+
+	Channel * channel = this->_server->findChannel(channelName);
+	std::map<Client *, bool> _clientsChannel = channel->getClients();
+
+	// broadcast part to _clientsChannel
+
+	channel->part(this->_client);
+
+	// Once all users in a channel have left that channel, the channel must be destroyed.
+	if (channel->isEmpty()) delete channel;
+}
 
 static std::string paramAsStr(std::vector<std::string>::iterator iter,
 								std::vector<std::string>::iterator end)
