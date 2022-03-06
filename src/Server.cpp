@@ -29,6 +29,7 @@ Server::Server(const unsigned int port, std::string password)
 }
 
 Server::~Server() {
+	std::cerr << std::endl << "QUIT" << std::endl;
 	close(this->_fdListen);
 	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		delete this->_clientVector[i];
@@ -39,45 +40,28 @@ void Server::run()
 	listen(this->_fdListen, BACKLOG_IRC);
 
 	this->_kQueue = kqueue();
-
-	this->_setSignals();
-	EV_SET(&this->_monitorEvent, this->_fdListen,
-		EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
-		throw std::runtime_error("kevent function failed");
+	this->_setKevents();
 
 	while(true)
 	{
 		int newEvents = kevent(this->_kQueue, NULL, 0, &this->_triggerEvent, 1, NULL);
-		if (newEvents == -1)
-			throw std::runtime_error("kevent function failed");
+		if (newEvents == -1) throw std::runtime_error("kevent function failed");
 
 		int eventFd = this->_triggerEvent.ident;
+		int eventFlags = this->_triggerEvent.flags;
 
-		if (this->_triggerEvent.flags & EV_EOF) {
-			// TODO : BROADCAST + (DELETE?) + ETC ...
-			Client *client = this->findClient(eventFd);
-			client->setFdSocket(-1);
-			std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
-			close(eventFd);
-		}
+		switch (this->_triggerEvent.filter) {
+			case EVFILT_SIGNAL: return;
 
-		else if (this->_triggerEvent.filter == EVFILT_READ
-				&& eventFd == this->_fdListen)
-			_addClient();
+			case EVFILT_READ:
+				if (eventFlags & EV_EOF) this->_closeClient(eventFd);
+				else if (eventFd == this->_fdListen) this->_addClient();
+				else this->_eventClientHandler(eventFd);
 
-		else if (this->_triggerEvent.filter == EVFILT_READ)
-			_eventClientHandler(eventFd);
-
-		else if (this->_triggerEvent.filter == EVFILT_SIGNAL) {
-			std::cerr << std::endl << "QUIT" << std::endl;
-			return;
+			default: break;
 		}
 	}
 }
-
-
-/* runtime */
 
 Client * Server::findClient(int eventFd)
 {
@@ -95,7 +79,6 @@ Client * Server::findClient(std::string nick)
 	return (NULL);
 }
 
-
 bool Server::checkPwd(std::string password) { return (this->_password == password); }
 
 
@@ -107,6 +90,24 @@ std::string Server::getCreationDate() const { return this->_creationDate; }
 
 
 /* private */
+
+void Server::_setKevents()
+{
+	signal(SIGINT, SIG_IGN);
+	EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+
+	signal(SIGQUIT, SIG_IGN);
+	EV_SET(&this->_monitorEvent, SIGQUIT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+
+	EV_SET(&this->_monitorEvent, this->_fdListen,
+		EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+}
 
 void Server::_addClient()
 {
@@ -142,6 +143,15 @@ void Server::_addClient()
 	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
+void Server::_closeClient(int eventFd)
+{
+	// TODO : BROADCAST + (DELETE?) + ETC ...
+	Client *client = this->findClient(eventFd);
+	client->setFdSocket(-1);
+	std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
+	close(eventFd);
+}
+
 void Server::_eventClientHandler(int eventFd)
 {
 	Client * client = this->findClient(eventFd);
@@ -169,27 +179,16 @@ void Server::_eventClientHandler(int eventFd)
 	}
 	else client->clearBuffer();
 
-	this->_debugMsgList(msgList);
+	this->_debugMsgList(msgList, eventFd);
 
 	MessageHandler msgHandler(client, this);
 	for_each(msgList.begin(), msgList.end(), msgHandler);
 }
 
-void Server::_setSignals() {
-	signal(SIGINT, SIG_IGN);
-	EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
-		throw std::runtime_error("kevent function failed");
-
-	signal(SIGQUIT, SIG_IGN);
-	EV_SET(&this->_monitorEvent, SIGQUIT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
-		throw std::runtime_error("kevent function failed");
-}
-
-void Server::_debugMsgList(std::list<Message> msgList) {
+void Server::_debugMsgList(std::list<Message> msgList, int eventFd) {
+	std::stringstream os;
+	os << "FD: " << eventFd << std::endl;
 	for (std::list<Message>::iterator m = msgList.begin(); m != msgList.end(); m++) {
-		std::stringstream os;
 		os << "Command: " << (*m).cmd << "\n";
 		os << "Parameters: ";
 		for (size_t i = 0; i < (*m).parameters.size(); i++)

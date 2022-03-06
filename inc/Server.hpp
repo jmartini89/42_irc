@@ -33,7 +33,6 @@ class Server
 		~Server();
 		void		run();
 
-		/* runtime */
 		Client *	findClient(int eventFd);
 		Client *	findClient(std::string nick);
 		bool		checkPwd(std::string password);
@@ -56,11 +55,13 @@ class Server
 
 		std::vector<Client *>	_clientVector;
 
+		void	_setKevents();
+
 		void	_addClient();
+		void	_closeClient(int eventFd);
 		void	_eventClientHandler(int eventFd);
 
-		void	_setSignals();
-		void	_debugMsgList(std::list<Message> msgList);
+		void	_debugMsgList(std::list<Message> msgList, int eventFd);
 };
 
 #endif
