@@ -93,25 +93,37 @@ void MessageHandler::_passCmd()
 		this->_client->setAllowed(false); //needed in case more pwd commands are sent (only the last one must be used)
 }
 
+// & prefix is for server to server connection, which is not implemented
+// TODO : translate & to #
 void MessageHandler::_joinCmd() {
 
-	// MESSAGE STUFF
-	std::string channelName = "TODO";
-	std::string channelKey = "TODO"; // if empty channel sets as not protected
-	bool op = false;
+	if (this->_message.parameters.size() < 2) return this->serverReply(ERR_NEEDMOREPARAMS);
 
-	Channel * channel = this->_server->findChannel(channelName);
-	if (channel == NULL) {
-		channel = new Channel(channelName, channelKey);
-		this->_server->addChannel(channel);
-		op = true;
+	std::vector<std::string> nameVector = MessageParser::split(this->_message.parameters[1], ",");
+
+	std::vector<std::string> keyVector;
+	if (this->_message.parameters.size() > 2)
+		keyVector = MessageParser::split(this->_message.parameters[2], ",");
+	else for (size_t it = 0; it < nameVector.size(); it++)
+		keyVector.push_back("");// empty key, channel sets as not protected
+
+	for (size_t it = 0; it < nameVector.size(); it++) {
+		bool op = false;
+
+		Channel * channel = this->_server->findChannel(nameVector[it]);
+		if (channel == NULL) {
+			channel = new Channel(nameVector[it], keyVector[it]);
+			this->_server->addChannel(channel);
+			op = true;
+		}
+
+		// client already joined
+		if (channel->getClients().count(this->_client)) return;
+
+		if (!channel->join(this->_client, op, keyVector[it])) this->serverReply(ERR_BADCHANNELKEY);
+
+		// CHANNEL BROADCAST
 	}
-
-	if (channel->getClients().find(this->_client) != channel->getClients().end()) {
-		; // TODO : client already joined
-	}
-
-	if (!channel->join(this->_client, op, channelKey)) ; // wrong key reply
 }
 
 void MessageHandler::_partCmd() {

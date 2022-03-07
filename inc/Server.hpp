@@ -47,7 +47,7 @@ class Server
 		void		addChannel(Channel * channel);
 		void		removeChannel(Channel * channel);
 		Channel *	findChannel(std::string name);
-		std::vector<Channel *>	getChannelVector();
+		// std::vector<Channel *>	getChannelVector(); // probably not needed
 		
 	private:
 		Server() {};

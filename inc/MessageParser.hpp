@@ -3,6 +3,7 @@
 
 #include <list>
 #include <vector>
+#include <map>
 
 #include "MessageHandler.hpp"
 #include "Defines.hpp"

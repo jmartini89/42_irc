@@ -1,7 +1,9 @@
 #include "Channel.hpp"
 #include "Server.hpp"
 
-Channel::Channel(std::string name, std::string key) : _name(name), _key(key) {}
+Channel::Channel(std::string name, std::string key) : _name(name), _key(key) {
+	std::cerr << "New channel created: " << name << " " << key << std::endl;
+}
 
 Channel::~Channel() {}
 
@@ -12,9 +14,13 @@ bool Channel::operator==(std::string name) { return this->_name == name; }
 
 bool Channel::join(Client * client, bool op, std::string key) {
 
-	if (this->_key != key) return false;
+	if (this->isProtected() && this->_key != key) return false; // TODO : isProtected check probably not needed
 
-	this->_clientsChannel.insert(std::map<Client *, bool>::value_type(client, true));
+	std::pair<std::map<Client *,bool>::iterator,bool> debug;
+	debug = this->_clientsChannel.insert(std::map<Client *, bool>::value_type(client, true));
+	if (debug.second==false) std::cerr << "ChannelJoin: Client already existed" << std::endl;
+
+	std::cerr << "DEBUG JOIN" << std::endl;
 
 	return true;
 }

@@ -116,7 +116,7 @@ Channel * Server::findChannel(std::string name) {
 	return NULL;
 }
 
-std::vector<Channel *> Server::getChannelVector() {}
+// std::vector<Channel *> Server::getChannelVector() {}
 
 
 /* private */

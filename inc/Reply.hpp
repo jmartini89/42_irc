@@ -51,6 +51,7 @@
 #define ERR_ALREADYREGISTRED	462
 #define ERR_PASSWDMISMATCH		464
 #define ERR_UNKNOWNMODE			472
+#define ERR_BADCHANNELKEY		475
 #define ERR_NOPRIVILEGES		481
 #define ERR_CHANOPRIVSNEEDED	482
 #define ERR_UMODEUNKNOWNFLAG	501
@@ -190,7 +191,7 @@ class Reply
 			case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
 			// case ERR_BANNEDFROMCHAN:		return "<channel> :Cannot join channel (+b)";
-			// case ERR_BADCHANNELKEY:		return "<channel> :Cannot join channel (+k)";
+			case ERR_BADCHANNELKEY:		return "<channel> :Cannot join channel (+k)";
 			// case ERR_BADCHANMASK:		return "<channel> :Bad Channel Mask";
 			// case ERR_NOCHANMODES:		return "<channel> :Channel doesn't support modes";
 			// case ERR_BANLISTFULL:		return "<channel> <char> :Channel list is full";
