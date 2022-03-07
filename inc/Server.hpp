@@ -67,7 +67,7 @@ class Server
 		void	_setKevents();
 
 		void	_addClient();
-		void	_closeClient(int eventFd);
+		void	_closeClient(int eventFd, bool isQuit);
 		void	_messageHandler(int eventFd);
 
 		void	_debugMsgList(std::list<Message> msgList, int eventFd);

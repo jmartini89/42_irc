@@ -16,11 +16,11 @@ class Client
 		std::string			_hostname;
 		std::string			_buffer;
 
+		bool				_connected;
 		bool				_registered;
 		std::string			_nick;
 		std::string			_user;
 		std::string			_realName;
-		// int					_userMode;
 		bool				_allowed;
 
 	public:
@@ -47,6 +47,7 @@ class Client
 
 		//Setters
 		void				setFdSocket(int fdSocket);
+		void				disconnect();
 
 		void				addBuffer(std::string buffer);
 		void				replaceBuffer(std::string buffer);

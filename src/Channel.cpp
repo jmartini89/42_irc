@@ -16,11 +16,9 @@ bool Channel::join(Client * client, bool op, std::string key) {
 
 	if (this->isProtected() && this->_key != key) return false; // TODO : isProtected check probably not needed
 
-	std::pair<std::map<Client *,bool>::iterator,bool> debug;
-	debug = this->_clientsChannel.insert(std::map<Client *, bool>::value_type(client, true));
-	if (debug.second==false) std::cerr << "ChannelJoin: Client already existed" << std::endl;
+	this->_clientsChannel[client] = op;
 
-	std::cerr << "DEBUG JOIN" << std::endl;
+	std::cerr << client->getNick() << " joined " << this->_name << std::endl;
 
 	return true;
 }
@@ -30,7 +28,7 @@ void Channel::part(Client * client) {}
 
 /* Getters */
 
-std::map<Client *, bool> Channel::getClients() const { return this->_clientsChannel; }
+clientMap * Channel::getClientMap()  { return &this->_clientsChannel; }
 
 bool Channel::isProtected() const { return !this->_key.empty(); }
 

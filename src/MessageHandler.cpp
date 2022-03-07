@@ -89,8 +89,8 @@ void MessageHandler::_passCmd()
 
 	if (this->_server->checkPwd(this->_message.parameters[1]))
 		this->_client->setAllowed(true);
-	else
-		this->_client->setAllowed(false); //needed in case more pwd commands are sent (only the last one must be used)
+	else //needed in case more pwd commands are sent (only the last one must be used)
+		this->_client->setAllowed(false);
 }
 
 // & prefix is for server to server connection, which is not implemented
@@ -104,8 +104,8 @@ void MessageHandler::_joinCmd() {
 	std::vector<std::string> keyVector;
 	if (this->_message.parameters.size() > 2)
 		keyVector = MessageParser::split(this->_message.parameters[2], ",");
-	else for (size_t it = 0; it < nameVector.size(); it++)
-		keyVector.push_back("");// empty key, channel sets as not protected
+	while (keyVector.size() != nameVector.size())
+		keyVector.push_back("");
 
 	for (size_t it = 0; it < nameVector.size(); it++) {
 		bool op = false;
@@ -118,11 +118,15 @@ void MessageHandler::_joinCmd() {
 		}
 
 		// client already joined
-		if (channel->getClients().count(this->_client)) return;
+		if (channel->getClientMap()->count(this->_client)) return;
 
-		if (!channel->join(this->_client, op, keyVector[it])) this->serverReply(ERR_BADCHANNELKEY);
+		if (!channel->join(this->_client, op, keyVector[it]))
+			return this->serverReply(ERR_BADCHANNELKEY);
 
-		// CHANNEL BROADCAST
+		for (clientMap::iterator it = channel->getClientMap()->begin();
+			it != channel->getClientMap()->end(); ++it) {
+			this->sendMsg(it->first->getFdSocket(), "whatever");
+		}
 	}
 }
 
@@ -132,7 +136,7 @@ void MessageHandler::_partCmd() {
 	std::string channelName = "TODO";
 
 	Channel * channel = this->_server->findChannel(channelName);
-	std::map<Client *, bool> _clientsChannel = channel->getClients();
+	clientMap * _clientsChannel = channel->getClientMap();
 
 	// broadcast part to _clientsChannel
 

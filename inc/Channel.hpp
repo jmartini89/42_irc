@@ -3,6 +3,8 @@
 
 #include "Client.hpp"
 
+typedef std::map<Client *, bool> clientMap;
+
 class Server;
 
 class Channel
@@ -18,10 +20,10 @@ class Channel
 		void	part(Client * client);
 
 		/* Getters */
-		std::map<Client *, bool>	getClients() const;
-		bool	isProtected() const;
-		bool	checkKey(std::string key) const;
-		bool	isEmpty() const;
+		clientMap *	getClientMap();
+		bool		isProtected() const;
+		bool		checkKey(std::string key) const;
+		bool		isEmpty() const;
 
 	private:
 		Channel() {};
@@ -29,7 +31,7 @@ class Channel
 		std::string		_name;
 		std::string		_key;
 
-		std::map<Client *, bool>	_clientsChannel;
+		clientMap		_clientsChannel;
 };
 
 #endif
