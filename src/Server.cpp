@@ -195,9 +195,9 @@ void Server::_messageHandler(int eventFd)
 	char buffer[BUFFER_SIZE];
 	bzero(buffer, BUFFER_SIZE);
 
-	ssize_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
-	if (bytes_read == -1) return;
-	else if (bytes_read == 0) return;
+	ssize_t bytesRead = recv(eventFd, buffer, BUFFER_SIZE, 0);
+	if (bytesRead == -1) return;
+	else if (bytesRead == 0) return;
 
 	client->replaceBuffer(client->getBuffer() + static_cast<std::string>(buffer));
 
@@ -210,7 +210,11 @@ void Server::_messageHandler(int eventFd)
 	if (MessageParser::findLastOf(client->getBuffer(), CRLF) != int(client->getBuffer().length() - CRLF.length())) {
 		client->clearBuffer();
 		for (size_t i = 0; i < msgList.back().parameters.size(); i++)
-			client->addBuffer(msgList.back().parameters[i] + " ");
+		{
+			client->addBuffer(msgList.back().parameters[i]);
+			if (i != msgList.back().parameters.size() - 1)
+				 client->addBuffer(" ");
+		}
 		msgList.pop_back();
 	}
 	else client->clearBuffer();

@@ -130,7 +130,8 @@ class Reply
 			// case RPL_ENDOFEXCEPTLIST:	return "<channel> :End of channel exception list";
 			// case RPL_VERSION:			return "<version>.<debuglevel> <server> :<comments>";
 			case RPL_WHOREPLY:				return "<channel> <user> <host> <server> <nick> ( \"H\" / \"G\" > [\"*\"] [ ( \"@\" / \"+\" ) ] :<hopcount> <real name>";
-			case RPL_NAMREPLY:				return "( \"=\" / \"*\" / \"@\" ) <channel> :[ \"@\" / \"+\" ] <nick> *( " " [ \"@\" / \"+\" ] <nick> )";
+			case RPL_NAMREPLY:				return "= <channel> :<nickname>";
+			// case RPL_NAMREPLY:				return "( \"=\" / \"*\" / \"@\" ) <channel> :[ \"@\" / \"+\" ] <nick> *( " " [ \"@\" / \"+\" ] <nick> )";
 			// case RPL_LINKS:				return "<mask> <server> :<hopcount> <server info>";
 			// case RPL_ENDOFLINKS:			return "<mask> :End of LINKS list";
 			case RPL_ENDOFNAMES:			return "<channel> :End of NAMES list";

@@ -47,10 +47,12 @@ class MessageHandler
 
 		void	serverReply(int code);
 		void	serverReply(int code, std::string target);
+		void	serverReply(int code, std::string target, std::string channel);
+
 		void	sendMsg(int fd, std::string message);
 
 	private :
-		std::vector<Client *>	_clientVector;
+		// std::vector<Client *>	_clientVector;
 		Client *				_client;
 		Message					_message;
 		Server *				_server;

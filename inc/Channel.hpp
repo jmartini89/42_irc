@@ -24,6 +24,7 @@ class Channel
 		bool		isProtected() const;
 		bool		checkKey(std::string key) const;
 		bool		isEmpty() const;
+		std::string	getName() const;
 
 	private:
 		Channel() {};

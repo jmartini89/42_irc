@@ -7,7 +7,7 @@ MessageHandler::MessageHandler(Client * client, Server * server)
 {
 	this->_client = client;
 	this->_server = server;
-	this->_clientVector = server->getClientVector();
+	// this->_clientVector = server->getClientVector();
 }
 
 MessageHandler::~MessageHandler(){};
@@ -109,7 +109,8 @@ void MessageHandler::_joinCmd() {
 
 	for (size_t it = 0; it < nameVector.size(); it++) {
 		bool op = false;
-
+		
+		if (nameVector[it].front() == '#') nameVector[it].erase(0,1);
 		Channel * channel = this->_server->findChannel(nameVector[it]);
 		if (channel == NULL) {
 			channel = new Channel(nameVector[it], keyVector[it]);
@@ -125,8 +126,16 @@ void MessageHandler::_joinCmd() {
 
 		for (clientMap::iterator it = channel->getClientMap()->begin();
 			it != channel->getClientMap()->end(); ++it) {
-			this->sendMsg(it->first->getFdSocket(), "whatever");
+			std::string msg = defHeader
+				+ " " + this->_message.parameters[0] + " "
+				+ "#" + channel->getName();
+			this->sendMsg(it->first->getFdSocket(), msg);
+			std::string nick = it->first->getNick();
+			if (it->second )
+				nick = "@" + nick;
+			serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
 		}
+		serverReply(RPL_ENDOFNAMES);
 	}
 }
 
@@ -207,7 +216,7 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_MYINFO);
 }
 
-void MessageHandler::serverReply(int code, std::string target)
+void MessageHandler::serverReply(int code, std::string target, std::string channel)
 {
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -227,6 +236,7 @@ void MessageHandler::serverReply(int code, std::string target)
 	MessageParser::replace(reply, "<available user modes>", USER_MODES);
 	MessageParser::replace(reply, "<available channel modes>", CHANNEL_MODES);
 	MessageParser::replace(reply, "<nickname>", target);
+	MessageParser::replace(reply, "<channel>", channel);
 
 	// Client *targetClient = _findClient(target);
 	// if (targetClient)
@@ -238,6 +248,8 @@ void MessageHandler::serverReply(int code, std::string target)
 }
 
 void MessageHandler::serverReply(int code) { serverReply(code, ""); }
+
+void MessageHandler::serverReply(int code, std::string target)  { serverReply(code, target, ""); }
 
 void MessageHandler::sendMsg(int fd, std::string message) {
 	message += CRLF;
