@@ -2,44 +2,25 @@
 #include "Server.hpp"
 #include "Reply.hpp"
 
-MessageHandler::MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector)
+//TODO use client and clientVector from server
+MessageHandler::MessageHandler(Client * client, Server * server)
 {
-	this->_msgList = msgList;
 	this->_client = client;
-	this->_clientVector = clientVector;
+	this->_server = server;
+	// this->_clientVector = server->getClientVector();
 }
 
 MessageHandler::~MessageHandler(){};
 
-std::list<Message> *MessageHandler::getMsgList() { return &(this->_msgList); }
-
-//operator called by for_each loop
 void MessageHandler::operator()(struct Message msg)
 {
 	this->_message = msg;
 	handleMsg();
 }
 
-std::ostream& operator<<(std::ostream& os, MessageHandler& mh)
-{
-	for (std::list<Message>::iterator it = mh.getMsgList()->begin(); it != mh.getMsgList()->end(); it++) 
-		os << *it;
-	return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Message& m)
-{
-	os << "Command: " << m.cmd << "\n";
-	os << "Parameters: ";
-	for (int i = 0; i < m.parameters.size(); i++)
-		os << m.parameters[i] << " ";
-	os << std::endl;
-	return os;
-}
-
 void MessageHandler::handleMsg()
 {
-	if (!(this->_message.cmd == NICK || this->_message.cmd == USER)
+	if (!(this->_message.cmd == NICK || this->_message.cmd == USER || this->_message.cmd == PASS)
 		&& !this->_client->isRegistered())
 		return serverReply(ERR_NOTREGISTERED);
 
@@ -48,29 +29,38 @@ void MessageHandler::handleMsg()
 		case NICK:		_nickCmd(); break;
 		case USER:		_userCmd(); break;
 		case JOIN:		_joinCmd(); break;
-		case PRIVMSG:	_prvMsgCmd(false); break;
-		case NOTICE:	_prvMsgCmd(true); break;
+		case PART:		_partCmd(); break;
+		case PRIVMSG:	_privMsgCmd(false); break;
+		case NOTICE:	_privMsgCmd(true); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
+		case PASS:		_passCmd(); break;
+		case WHO:		break;
+		case MODE:		break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
+
+
+/* Commands */
 
 void MessageHandler::_nickCmd()
 {
 	if (this->_message.parameters.size() < 2) return serverReply(ERR_NONICKNAMEGIVEN);
 
-	if (this->_findClient(this->_message.parameters[1]))
+	if (this->_server->findClient(this->_message.parameters[1])
+		&& this->_server->findClient(this->_message.parameters[1]) != this->_client)
 			return serverReply(ERR_NICKNAMEINUSE);
 
+	std::string oldNick =this->_client->getNick();
 	this->_client->setNick(this->_message.parameters[1]);
 
-	if (!this->_client->isRegistered() && this->_client->isUser()) {
-		this->_client->setRegistered(true);
-		this->_welcomeReply();
-	}
-	else if (this->_client->isUser()) {
-		// TODO : BROADCAST
+	if (!this->_client->isRegistered() && this->_client->isUser()) this->_register();
+	else if (this->_client->isRegistered()) {
+		// BROADCAST : CLIENT && client's joined CHANNELS
+		std::string msg = defHeader + " " + "NICK" + " " + this->_message.parameters[1];
+		msg.replace(1, this->_client->getNick().size(), oldNick);
+		this->sendMsg(this->_client->getFdSocket(), msg);
 	}
 }
 
@@ -83,18 +73,93 @@ void MessageHandler::_userCmd()
 
 	std::string realName;
 	if (this->_message.parameters[4][0] == ':') this->_message.parameters[4].erase(0, 1);
-	for (int i = 4; i < this->_message.parameters.size(); i++)
+	for (size_t i = 4; i < this->_message.parameters.size(); i++)
 		realName += this->_message.parameters[i];
 	this->_client->setRealName(realName);
 
-	if (!this->_client->getNick().empty()) {
-		this->_client->setRegistered(true);
-		return this->_welcomeReply();
+	if (!this->_client->getNick().empty()) this->_register();
+}
+
+void MessageHandler::_passCmd()
+{
+	if (this->_message.parameters.size() == 1)
+		return serverReply(ERR_NEEDMOREPARAMS);
+	if (this->_client->isRegistered())
+		return serverReply(ERR_ALREADYREGISTRED);
+
+	if (this->_message.parameters[1][0] == ':') this->_message.parameters[1].erase(0, 1);
+
+	if (this->_server->checkPwd(this->_message.parameters[1]))
+		this->_client->setAllowed(true);
+	else //needed in case more pwd commands are sent (only the last one must be used)
+		this->_client->setAllowed(false);
+}
+
+// & prefix is for server to server connection, which is not implemented
+// TODO : translate & to #
+void MessageHandler::_joinCmd() {
+
+	if (this->_message.parameters.size() < 2) return this->serverReply(ERR_NEEDMOREPARAMS);
+
+	std::vector<std::string> nameVector = MessageParser::split(this->_message.parameters[1], ",");
+
+	std::vector<std::string> keyVector;
+	if (this->_message.parameters.size() > 2)
+		keyVector = MessageParser::split(this->_message.parameters[2], ",");
+	while (keyVector.size() != nameVector.size())
+		keyVector.push_back("");
+
+	for (size_t it = 0; it < nameVector.size(); it++) {
+		bool op = false;
+		
+		if (nameVector[it].front() == '#') nameVector[it].erase(0,1);
+		Channel * channel = this->_server->findChannel(nameVector[it]);
+		if (channel == NULL) {
+			channel = new Channel(nameVector[it], keyVector[it]);
+			this->_server->addChannel(channel);
+			op = true;
+		}
+
+		// client already joined
+		if (channel->getClientMap()->count(this->_client)) return;
+
+		if (!channel->join(this->_client, op, keyVector[it]))
+			return this->serverReply(ERR_BADCHANNELKEY);
+
+		for (clientMap::iterator it = channel->getClientMap()->begin();
+			it != channel->getClientMap()->end(); ++it) {
+			std::string msg = defHeader
+				+ " " + this->_message.parameters[0] + " "
+				+ "#" + channel->getName();
+			this->sendMsg(it->first->getFdSocket(), msg);
+		}
+
+		for (clientMap::iterator it = channel->getClientMap()->begin();
+			it != channel->getClientMap()->end(); ++it) {
+			std::string nick = it->first->getNick();
+			if (it->second )
+				nick = "@" + nick;
+			serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+		}
+		serverReply(RPL_ENDOFNAMES);
 	}
 }
 
-void MessageHandler::_joinCmd()
-{}
+void MessageHandler::_partCmd() {
+
+	// MESSAGE STUFF
+	std::string channelName = "TODO";
+
+	Channel * channel = this->_server->findChannel(channelName);
+	clientMap * _clientsChannel = channel->getClientMap();
+
+	// broadcast part to _clientsChannel
+
+	channel->part(this->_client);
+
+	// Once all users in a channel have left that channel, the channel must be destroyed.
+	if (channel->isEmpty()) this->_server->removeChannel(channel);
+}
 
 static std::string paramAsStr(std::vector<std::string>::iterator iter,
 								std::vector<std::string>::iterator end)
@@ -105,7 +170,7 @@ static std::string paramAsStr(std::vector<std::string>::iterator iter,
 	return str;
 }
 
-void MessageHandler::_prvMsgCmd(bool isNotice)
+void MessageHandler::_privMsgCmd(bool isNotice)
 {
 	if (this->_message.parameters.size() == 1) {
 		if (isNotice) return;
@@ -117,17 +182,16 @@ void MessageHandler::_prvMsgCmd(bool isNotice)
 	}
 	
 	std::string target = this->_message.parameters[1];
-	if (target.c_str()[0] == '#')
+	if (target[0] == '#')
 		;  //TODO handle # for channels
 
-	std::string header = ":" + this->_client->getNick() 
-						+ "!" + this->_client->getUser() 
-						+ "@" + this->_client->getHostname() 
+	std::string header = defHeader
 						+ " " + this->_message.parameters[0] + " "
 						+ target;
-	std::string text = " :" + paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
+	std::string text = " " + this->_message.parameters[2];
+	// paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
 
-	Client *targetClient = this->_findClient(target);
+	Client *targetClient = this->_server->findClient(target);
 	if (!targetClient) {
 		if (isNotice) return;
 		return (serverReply(ERR_NOSUCHNICK, target));
@@ -142,13 +206,14 @@ void MessageHandler::_pongCmd() {
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
-Client *
-MessageHandler::_findClient(std::string nick)
-{
-	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
-			return this->_clientVector[i];
-	return (NULL);
+
+/* Server Operations */
+
+void MessageHandler::_register() {
+	if (!this->_client->isAllowed())
+		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
+	this->_client->setRegistered(true);
+	return this->_welcomeReply();
 }
 
 void MessageHandler::_welcomeReply() {
@@ -158,8 +223,7 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_MYINFO);
 }
 
-void
-MessageHandler::serverReply(int code, std::string target)
+void MessageHandler::serverReply(int code, std::string target, std::string channel)
 {
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -174,7 +238,12 @@ MessageHandler::serverReply(int code, std::string target)
 	MessageParser::replace(reply, "<host>", this->_client->getHostname());
 	MessageParser::replace(reply, "<servername>", IRC_NAME);
 	MessageParser::replace(reply, "<command>", this->_message.parameters[0]);
+	MessageParser::replace(reply, "<date>", this->_server->getCreationDate());
+	MessageParser::replace(reply, "<version>", VERSION);
+	MessageParser::replace(reply, "<available user modes>", USER_MODES);
+	MessageParser::replace(reply, "<available channel modes>", CHANNEL_MODES);
 	MessageParser::replace(reply, "<nickname>", target);
+	MessageParser::replace(reply, "<channel>", channel);
 
 	// Client *targetClient = _findClient(target);
 	// if (targetClient)
@@ -185,13 +254,11 @@ MessageHandler::serverReply(int code, std::string target)
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
-void
-MessageHandler::serverReply(int code) {
-	serverReply(code, "");
-}
+void MessageHandler::serverReply(int code) { serverReply(code, ""); }
 
-void
-MessageHandler::sendMsg(int fd, std::string message) {
+void MessageHandler::serverReply(int code, std::string target)  { serverReply(code, target, ""); }
+
+void MessageHandler::sendMsg(int fd, std::string message) {
 	message += CRLF;
 	send(fd, message.c_str(), message.size(), 0);
 }

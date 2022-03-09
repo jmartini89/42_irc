@@ -5,6 +5,9 @@
 
 #include <netinet/in.h>
 
+#include "Defines.hpp"
+#include "MessageParser.hpp"
+
 class Client
 {
 	private:
@@ -13,11 +16,12 @@ class Client
 		std::string			_hostname;
 		std::string			_buffer;
 
+		bool				_connected;
 		bool				_registered;
 		std::string			_nick;
 		std::string			_user;
 		std::string			_realName;
-		int					_userMode;
+		bool				_allowed;
 
 	public:
 		Client();
@@ -35,6 +39,7 @@ class Client
 		bool				isRegistered() const;
 		bool				isUser() const;
 		bool				isConnected() const;
+		bool				isAllowed() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;
@@ -42,10 +47,15 @@ class Client
 
 		//Setters
 		void				setFdSocket(int fdSocket);
+		void				disconnect();
+
 		void				addBuffer(std::string buffer);
+		void				replaceBuffer(std::string buffer);
 		void				clearBuffer();
+
 		void				setRegistered(bool state);
 		void				setHostname(char * hostname);
+		void				setAllowed(bool state);
 
 		void				setNick(std::string nick);
 		void				setUser(std::string user);

@@ -51,6 +51,7 @@
 #define ERR_ALREADYREGISTRED	462
 #define ERR_PASSWDMISMATCH		464
 #define ERR_UNKNOWNMODE			472
+#define ERR_BADCHANNELKEY		475
 #define ERR_NOPRIVILEGES		481
 #define ERR_CHANOPRIVSNEEDED	482
 #define ERR_UMODEUNKNOWNFLAG	501
@@ -68,7 +69,7 @@ class Reply
 		switch(reply)
 		{
 			case RPL_WELCOME:				return ":Welcome to the Internet Relay Network <nick>!<user>@<host>";
-			case RPL_YOURHOST:				return "Your host is <servername>, running version <ver>";
+			case RPL_YOURHOST:				return "Your host is <servername>, running version <version>";
 			case RPL_CREATED:				return "This server was created <date>";
 			case RPL_MYINFO:				return "<servername> <version> <available user modes> <available channel modes>";
 			// case RPL_BOUNCE:				return "Try server <server name>, port <port number>";
@@ -129,7 +130,8 @@ class Reply
 			// case RPL_ENDOFEXCEPTLIST:	return "<channel> :End of channel exception list";
 			// case RPL_VERSION:			return "<version>.<debuglevel> <server> :<comments>";
 			case RPL_WHOREPLY:				return "<channel> <user> <host> <server> <nick> ( \"H\" / \"G\" > [\"*\"] [ ( \"@\" / \"+\" ) ] :<hopcount> <real name>";
-			case RPL_NAMREPLY:				return "( \"=\" / \"*\" / \"@\" ) <channel> :[ \"@\" / \"+\" ] <nick> *( " " [ \"@\" / \"+\" ] <nick> )";
+			case RPL_NAMREPLY:				return "= <channel> :<nickname>";
+			// case RPL_NAMREPLY:				return "( \"=\" / \"*\" / \"@\" ) <channel> :[ \"@\" / \"+\" ] <nick> *( " " [ \"@\" / \"+\" ] <nick> )";
 			// case RPL_LINKS:				return "<mask> <server> :<hopcount> <server info>";
 			// case RPL_ENDOFLINKS:			return "<mask> :End of LINKS list";
 			case RPL_ENDOFNAMES:			return "<channel> :End of NAMES list";
@@ -190,7 +192,7 @@ class Reply
 			case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
 			// case ERR_BANNEDFROMCHAN:		return "<channel> :Cannot join channel (+b)";
-			// case ERR_BADCHANNELKEY:		return "<channel> :Cannot join channel (+k)";
+			case ERR_BADCHANNELKEY:		return "<channel> :Cannot join channel (+k)";
 			// case ERR_BADCHANMASK:		return "<channel> :Bad Channel Mask";
 			// case ERR_NOCHANMODES:		return "<channel> :Channel doesn't support modes";
 			// case ERR_BANLISTFULL:		return "<channel> <char> :Channel list is full";

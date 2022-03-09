@@ -26,6 +26,10 @@ clean :
 	@$(RM) $(TARGET) $(OBJECTS)
 	@echo "\033[33m"$(NAME)" clean completed\033[0m"
 
+fclean :
+	@$(RM) -rf $(OBJDIR) $(BINDIR)
+	@echo "\033[33m"/$(OBJDIR) /$(BINDIR)" fclean completed\033[0m"
+
 re : clean all
 
 debug : CFLAGS += $(DEBUG)
@@ -35,6 +39,11 @@ debug : all
 leak : CFLAGS += $(DEBUG) $(DEBUG_ADDR)
 leak : all
 	@echo "\033[31mDEBUG ADDRESS\033[0m"
+
+bin/testClient : testClient.cpp
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -o $@ $^
+	@echo "\033[32m"$@" compiled successfully\033[0m"
 
 #Link
 $(TARGET) : $(OBJECTS)

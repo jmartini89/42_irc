@@ -3,8 +3,12 @@
 Server::Server(const unsigned int port, std::string password)
 : _password(password) {
 
+	std::time_t now = std::time(nullptr);
+	this->_creationDate = std::asctime(std::localtime(&now));
+	this->_creationDate.pop_back();
+
 	this->_fdListen = socket(AF_INET, SOCK_STREAM, 0);
-	if (this->_fdListen == -1) throw std::runtime_error("socket function failed");;
+	if (this->_fdListen == -1) throw std::runtime_error("socket function failed");
 
 	this->_address.sin_family = AF_INET;
 	this->_address.sin_port = htons(port);
@@ -12,75 +16,128 @@ Server::Server(const unsigned int port, std::string password)
 
 	int optval = 1;
 	if (setsockopt(this->_fdListen, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval)))
-		this->_constructErr("setsockopt function failed");
+		throw std::runtime_error("setsockopt function failed");
 
 	if (fcntl(this->_fdListen, F_SETFL, O_NONBLOCK) == -1)
-		this->_constructErr("fcntl function failed");
+		throw std::runtime_error("fcntl function failed");
 
 	if (bind(
 		this->_fdListen,
 		(struct sockaddr *)&this->_address,
 		sizeof(this->_address)))
-		this->_constructErr("bind function failed");
+		throw std::runtime_error("bind function failed");
 }
 
-void
-Server::_constructErr(std::string errstr)
-{
+Server::~Server() {
+	std::cerr << std::endl << "QUIT" << std::endl;
 	close(this->_fdListen);
-	throw std::runtime_error(errstr);
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
+		delete this->_clientVector[i];
 }
 
-Server::~Server() 
-{
-	close(this->_fdListen);
-	//TODO delete client
-}
-
-void
-Server::run()
+void Server::run()
 {
 	listen(this->_fdListen, BACKLOG_IRC);
 
 	this->_kQueue = kqueue();
-	this->_monitorEvent.push_back(t_kevent());
-	this->_triggerEvent.push_back(t_kevent());
-
-	EV_SET(&this->_monitorEvent[0], this->_fdListen,
-		EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) == -1)
-		throw std::runtime_error("kevent function failed");
+	this->_setKevents();
 
 	while(true)
 	{
-		int newEvents = kevent(this->_kQueue, NULL, 0, &this->_triggerEvent[0], 1, NULL);
-		if (newEvents == -1)
-			throw std::runtime_error("kevent function failed");
+		int newEvents = kevent(this->_kQueue, NULL, 0, &this->_triggerEvent, 1, NULL);
+		if (newEvents == -1) throw std::runtime_error("kevent function failed");
 
-		for (int i = 0; i < newEvents && i < 1; i++)
-		{
-			int eventFd = this->_triggerEvent[i].ident;
+		int eventFd = this->_triggerEvent.ident;
+		int eventFlags = this->_triggerEvent.flags;
 
-			if (this->_triggerEvent[i].flags & EV_EOF)
-			{
-				// TODO : BROADCAST + (DELETE?) + ETC ...
-				Client *client = this->findClient(eventFd);
-				client->setFdSocket(-1);
-				std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
-				close(eventFd);
-			}
+		switch (this->_triggerEvent.filter) {
+			case EVFILT_SIGNAL: return;
 
-			else if (eventFd == this->_fdListen)
-				_addClient();
+			case EVFILT_READ:
+				if (eventFlags & EV_EOF) this->_closeClient(eventFd, false);
+				else if (eventFd == this->_fdListen) this->_addClient();
+				else this->_messageHandler(eventFd);
 
-			else if (this->_triggerEvent[i].filter & EVFILT_READ)
-				_eventClientHandler(eventFd);
+			default: break;
 		}
 	}
 }
 
-void	Server::_addClient()
+
+/* Server Properties */
+
+bool Server::checkPwd(std::string password) { return (this->_password == password); }
+
+std::string Server::getCreationDate() const { return this->_creationDate; }
+
+
+/* Clients */
+
+Client * Server::findClient(int eventFd)
+{
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
+		if (eventFd == this->_clientVector[i]->getFdSocket())
+			return this->_clientVector[i];
+	throw std::runtime_error("findClient: client not found");
+}
+
+Client * Server::findClient(std::string nick)
+{
+	for (size_t i = 0; i < this->_clientVector.size(); i++)
+		if (nick == this->_clientVector[i]->getNick() && this->_clientVector[i]->isConnected())
+			return this->_clientVector[i];
+	return (NULL);
+}
+
+std::vector<Client *> Server::getClientVector() { return this->_clientVector; }
+
+
+/* Channels */
+
+void Server::addChannel(Channel * channel) { this->_channelVector.push_back(channel); }
+
+void Server::removeChannel(Channel * channel) {
+	for (std::vector<Channel *>::iterator it = this->_channelVector.begin(); it < this->_channelVector.end(); it++)
+		if ((*it) == channel) {
+			this->_channelVector.erase(it);
+			delete (*it);
+			return;
+		}
+	std::cerr << "removeChannel failed" << std::endl;
+}
+
+Channel * Server::findChannel(std::string name) {
+	for (size_t it = 0; it < this->_channelVector.size(); it++) {
+		if (*this->_channelVector[it] == name)
+			return this->_channelVector[it];
+	}
+	return NULL;
+}
+
+// std::vector<Channel *> Server::getChannelVector() {}
+
+
+/* private */
+
+void Server::_setKevents()
+{
+	signal(SIGINT, SIG_IGN);
+	EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+
+	signal(SIGQUIT, SIG_IGN);
+	EV_SET(&this->_monitorEvent, SIGQUIT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+
+	EV_SET(&this->_monitorEvent, this->_fdListen,
+		EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent function failed");
+}
+
+void Server::_addClient()
 {
 	Client *client = new Client();
 
@@ -93,6 +150,9 @@ void	Server::_addClient()
 		return;
 	}
 
+	if (fcntl(this->_fdListen, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("fcntl function failed");
+
 	client->setFdSocket(fdClient);
 
 	char host[HOSTNAME_LEN];
@@ -101,8 +161,8 @@ void	Server::_addClient()
 	else
 		client->setHostname(inet_ntoa(client->getAddressPointer()->sin_addr));
 
-	EV_SET(&this->_monitorEvent[0], client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(this->_kQueue, &this->_monitorEvent[0], 1, NULL, 0, NULL) < 0)
+	EV_SET(&this->_monitorEvent, client->getFdSocket(), EVFILT_READ, EV_ADD, 0, 0, NULL);
+	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent function failed");
 
 	this->_clientVector.push_back(client);
@@ -110,36 +170,69 @@ void	Server::_addClient()
 	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
-void
-Server::_eventClientHandler(int eventFd)
+// new stuff is probably very wrong...
+void Server::_closeClient(int eventFd, bool isQuit)
 {
-	Client * client = this->findClient(eventFd);
-	char buffer[BUFFER_SIZE];
+	Client *client = this->findClient(eventFd);
 
-	bzero(buffer, BUFFER_SIZE);
-	size_t bytes_read = recv(eventFd, buffer, BUFFER_SIZE, 0);
+	if (client->isConnected()) {
+		client->disconnect();
+		// BROADCAST QUIT
+	}
 
-	client->addBuffer(buffer);
+	std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
 
-	// TODO : clear buffer only until last CRLF
-	// for example : cmd params CLRF cmd params (END OF MESSAGE FOR REASONS) -> 2nd part should be kept
-	if (client->getBuffer().find(CRLF) == std::string::npos)
-		return;
-
-	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
-	MessageHandler msgHandler(msgList, client, this->_clientVector);
-
-	std::cout << msgHandler; // DEBUG
-
-	for_each (msgList.begin(), msgList.end(), msgHandler);
-	client->clearBuffer();
+	if (!isQuit) {
+		close(eventFd);
+		client->setFdSocket(-1);
+	}
 }
 
-Client *
-Server::findClient(int eventFd)
+void Server::_messageHandler(int eventFd)
 {
-	for (int i = 0; i < this->_clientVector.size(); i++)
-		if (eventFd == this->_clientVector[i]->getFdSocket())
-			return this->_clientVector[i];
-	throw std::runtime_error("findClient: client not found");
+	Client * client = this->findClient(eventFd);
+
+	char buffer[BUFFER_SIZE];
+	bzero(buffer, BUFFER_SIZE);
+
+	ssize_t bytesRead = recv(eventFd, buffer, BUFFER_SIZE, 0);
+	if (bytesRead == -1) return;
+	else if (bytesRead == 0) return;
+
+	client->replaceBuffer(client->getBuffer() + static_cast<std::string>(buffer));
+
+	// EOT not found
+	if (client->getBuffer().find(CRLF) == std::string::npos) return;
+
+	std::list<Message> msgList = MessageParser::parseMsg(client->getBuffer());
+
+	// EOT with buffer remainder
+	if (MessageParser::findLastOf(client->getBuffer(), CRLF) != int(client->getBuffer().length() - CRLF.length())) {
+		client->clearBuffer();
+		for (size_t i = 0; i < msgList.back().parameters.size(); i++)
+		{
+			client->addBuffer(msgList.back().parameters[i]);
+			if (i != msgList.back().parameters.size() - 1)
+				 client->addBuffer(" ");
+		}
+		msgList.pop_back();
+	}
+	else client->clearBuffer();
+
+	this->_debugMsgList(msgList, eventFd);
+
+	MessageHandler msgHandler(client, this);
+	for_each(msgList.begin(), msgList.end(), msgHandler);
+}
+
+void Server::_debugMsgList(std::list<Message> msgList, int eventFd) {
+	std::stringstream os;
+	os << "FD: " << eventFd << std::endl;
+	for (std::list<Message>::iterator m = msgList.begin(); m != msgList.end(); m++) {
+		os << "Command: " << (*m).cmd << "\n";
+		os << "Parameters: ";
+		for (size_t i = 0; i < (*m).parameters.size(); i++)
+			os << (*m).parameters[i] << " ";
+		std::cout << os.str() << std::endl;
+	}
 }

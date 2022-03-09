@@ -8,15 +8,21 @@
 #include <iomanip>
 #include <map>
 
+#define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
+
 enum Commands {
 	UNDEFINED,
 	NICK,
 	USER,
 	JOIN,
+	PART,
 	PRIVMSG,
 	NOTICE,
 	PING,
-	PONG
+	PONG,
+	PASS,
+	MODE,
+	WHO
 };
 
 struct Message 
@@ -26,14 +32,15 @@ struct Message
 	std::vector<std::string>	parameters;
 };
 
-#include "Client.hpp"
+class Server;
+class Client;
 
 typedef std::map<std::string, int> enumMap;
 
 class MessageHandler
 {
 	public :
-		MessageHandler(std::list<Message> msgList, Client * client, const std::vector<Client *> clientVector);
+		MessageHandler(Client * client, Server *server);
 		~MessageHandler();
 
 		void	operator()(struct Message msg);
@@ -42,43 +49,47 @@ class MessageHandler
 
 		void	serverReply(int code);
 		void	serverReply(int code, std::string target);
+		void	serverReply(int code, std::string target, std::string channel);
+
 		void	sendMsg(int fd, std::string message);
 
-		//Getters
-		std::list<Message> *getMsgList(); // REDUNDANT ?
-
 	private :
-		std::vector<Client *>	_clientVector;
+		// std::vector<Client *>	_clientVector;
 		Client *				_client;
-		std::list<Message>		_msgList; // REDUNDANT ?
 		Message					_message;
+		Server *				_server;
 
+		/* Commands */
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
-		void	_prvMsgCmd(bool isNotice);
+		void	_partCmd();
+		void	_privMsgCmd(bool isNotice);
+		void	_passCmd();
 		void	_pongCmd();
 
-		void	_welcomeReply();
-		Client	*_findClient(std::string nick);
-
+		/* Server operations */
+		void		_register();
+		void		_welcomeReply();
 };
 
 static enumMap _initMap() {
 	enumMap aMap;
-	aMap["UNDEFINED"] = UNDEFINED;
-	aMap["NICK"] = NICK;
-	aMap["USER"] = USER;
-	aMap["JOIN"] = JOIN;
-	aMap["PRIVMSG"] = PRIVMSG;
-	aMap["NOTICE"] = NOTICE;
-	aMap["PING"] = PING;
-	aMap["PONG"] = PONG;
+	aMap["UNDEFINED"] =	UNDEFINED;
+	aMap["NICK"] =		NICK;
+	aMap["USER"] =		USER;
+	aMap["JOIN"] =		JOIN;
+	aMap["PART"] =		PART;
+	aMap["PRIVMSG"] =	PRIVMSG;
+	aMap["NOTICE"] =	NOTICE;
+	aMap["PING"] =		PING;
+	aMap["PONG"] =		PONG;
+	aMap["PASS"] =		PASS;
+	aMap["MODE"] =		MODE;
+	aMap["WHO"] =		WHO;
 	return aMap;
 };
 
 const enumMap cmdMap = _initMap();
-std::ostream& operator<<(std::ostream& os, MessageHandler& mh);
-std::ostream& operator<<(std::ostream& os, const Message& m);
 
 #endif
