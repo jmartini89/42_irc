@@ -3,11 +3,9 @@
 #include "Reply.hpp"
 
 //TODO use client and clientVector from server
-MessageHandler::MessageHandler(Client * client, Server * server)
-{
+MessageHandler::MessageHandler(Client * client, Server * server) {
 	this->_client = client;
 	this->_server = server;
-	// this->_clientVector = server->getClientVector();
 }
 
 MessageHandler::~MessageHandler(){};
@@ -35,8 +33,9 @@ void MessageHandler::handleMsg()
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
-		case WHO:		break;
-		case MODE:		break;
+		case WHO:		break; // TODO ?
+		case MODE:		break; // TODO
+		case QUIT:		_quitCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -95,6 +94,14 @@ void MessageHandler::_passCmd()
 		this->_client->setAllowed(false);
 }
 
+void MessageHandler::_broadcastChannel(Channel * channel, std::string message, bool excludeMe) {
+	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
+		if (!(it->first == this->_client) || !excludeMe)
+			this->sendMsg(it->first->getFdSocket(), message);
+}
+
+void MessageHandler::_broadcastChannel(Channel * channel, std::string message) { this->_broadcastChannel(channel, message, false); }
+
 // & prefix is for server to server connection, which is not implemented
 // TODO : translate & to #
 void MessageHandler::_joinCmd() {
@@ -111,8 +118,8 @@ void MessageHandler::_joinCmd() {
 
 	for (size_t it = 0; it < nameVector.size(); it++) {
 		bool op = false;
-		
-		if (nameVector[it].front() == '#') nameVector[it].erase(0,1);
+
+		if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[it]);
 		if (channel == NULL) {
 			channel = new Channel(nameVector[it], keyVector[it]);
@@ -126,14 +133,12 @@ void MessageHandler::_joinCmd() {
 		if (!channel->join(this->_client, op, keyVector[it]))
 			return this->serverReply(ERR_BADCHANNELKEY);
 
-		for (clientMap::iterator it = channel->getClientMap()->begin();
-			it != channel->getClientMap()->end(); ++it) {
-			std::string msg = defHeader
-				+ " " + this->_message.parameters[0] + " "
-				+ "#" + channel->getName();
-			this->sendMsg(it->first->getFdSocket(), msg);
-		}
+		std::string msg = defHeader
+			+ " " + this->_message.parameters[0] + " "
+			+ "#" + channel->getName();
+		this->_broadcastChannel(channel, msg);
 
+		// channel list to client
 		for (clientMap::iterator it = channel->getClientMap()->begin();
 			it != channel->getClientMap()->end(); ++it) {
 			std::string nick = it->first->getNick();
@@ -146,28 +151,30 @@ void MessageHandler::_joinCmd() {
 }
 
 void MessageHandler::_partCmd() {
+	if (this->_message.parameters.size() < 2) return this->serverReply(ERR_NEEDMOREPARAMS);
 
-	// MESSAGE STUFF
-	std::string channelName = "TODO";
+	std::vector<std::string> nameVector = MessageParser::split(this->_message.parameters[1], ",");
+	std::string reason;
+	if (this->_message.parameters.size() > 2) reason = this->_message.parameters[2];
 
-	Channel * channel = this->_server->findChannel(channelName);
-	clientMap * _clientsChannel = channel->getClientMap();
+	for (size_t it = 0; it < nameVector.size(); it++) {
+		if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
 
-	// broadcast part to _clientsChannel
+		Channel * channel = this->_server->findChannel(nameVector[it]);
+		if (channel == NULL) return this->serverReply(ERR_NOSUCHCHANNEL);
+		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_NOTONCHANNEL);
 
-	channel->part(this->_client);
+		std::string msg = defHeader
+			+ " " + this->_message.parameters[0] + " "
+			+ "#" + channel->getName();
+		if (!reason.empty()) msg += " " + reason;
+		this->_broadcastChannel(channel, msg);
 
-	// Once all users in a channel have left that channel, the channel must be destroyed.
-	if (channel->isEmpty()) this->_server->removeChannel(channel);
-}
+		channel->part(this->_client);
 
-static std::string paramAsStr(std::vector<std::string>::iterator iter,
-								std::vector<std::string>::iterator end)
-{
-	std::string str;
-	for (; iter != end; ++iter)
-		str += *iter + " ";
-	return str;
+		// Once all users in a channel have left that channel, the channel must be destroyed.
+		if (channel->isEmpty()) this->_server->removeChannel(channel);
+	}
 }
 
 void MessageHandler::_privMsgCmd(bool isNotice)
@@ -180,30 +187,55 @@ void MessageHandler::_privMsgCmd(bool isNotice)
 		if (isNotice) return;
 		return (serverReply(ERR_NOTEXTTOSEND));
 	}
-	
-	std::string target = this->_message.parameters[1];
-	if (target[0] == '#')
-		;  //TODO handle # for channels
 
+	std::string target = this->_message.parameters[1];
 	std::string header = defHeader
 						+ " " + this->_message.parameters[0] + " "
 						+ target;
 	std::string text = " " + this->_message.parameters[2];
-	// paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
+	std::string msg = header + text;
 
+	// channel message
+	if (target.front() == '#') {
+		target.erase(0, 1);
+		Channel * channel = this->_server->findChannel(target);
+		if (channel == NULL) return this->serverReply(ERR_CANNOTSENDTOCHAN);
+		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_CANNOTSENDTOCHAN);
+		this->_broadcastChannel(channel, msg, true);
+		return;
+	}
+
+	// client to client message
 	Client *targetClient = this->_server->findClient(target);
 	if (!targetClient) {
 		if (isNotice) return;
 		return (serverReply(ERR_NOSUCHNICK, target));
 	}
-
-	std::string msg = header + text;
 	sendMsg(targetClient->getFdSocket(), msg);
 }
 
 void MessageHandler::_pongCmd() {
 	std::string reply = "PONG";
 	this->sendMsg(this->_client->getFdSocket(), reply);
+}
+
+void MessageHandler::_quitCmd() {
+	close(this->_client->getFdSocket());
+	this->_client->setFdSocket(-1);
+
+	std::string header = defHeader
+						+ " " + this->_message.parameters[0] + " ";
+	std::string text;
+	if (this->_message.parameters.size() > 2) text =  " " + this->_message.parameters[2];
+	std::string msg = header + text;
+
+	for (std::vector<Channel *>::iterator it = this->_server->getChannelVector()->begin();
+		it != this->_server->getChannelVector()->end(); ++it)
+		(*it)->getClientMap()->erase(this->_client);
+
+	for (std::vector<Client *>::iterator it = this->_server->getClientVector()->begin();
+		it != this->_server->getClientVector()->end(); ++it)
+		this->sendMsg((*it)->getFdSocket(), msg);
 }
 
 
@@ -259,6 +291,7 @@ void MessageHandler::serverReply(int code) { serverReply(code, ""); }
 void MessageHandler::serverReply(int code, std::string target)  { serverReply(code, target, ""); }
 
 void MessageHandler::sendMsg(int fd, std::string message) {
+	if (fd == -1) return;
 	message += CRLF;
 	send(fd, message.c_str(), message.size(), 0);
 }

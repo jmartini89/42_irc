@@ -22,7 +22,8 @@ enum Commands {
 	PONG,
 	PASS,
 	MODE,
-	WHO
+	WHO,
+	QUIT
 };
 
 struct Message 
@@ -34,6 +35,7 @@ struct Message
 
 class Server;
 class Client;
+class Channel;
 
 typedef std::map<std::string, int> enumMap;
 
@@ -54,7 +56,6 @@ class MessageHandler
 		void	sendMsg(int fd, std::string message);
 
 	private :
-		// std::vector<Client *>	_clientVector;
 		Client *				_client;
 		Message					_message;
 		Server *				_server;
@@ -67,6 +68,10 @@ class MessageHandler
 		void	_privMsgCmd(bool isNotice);
 		void	_passCmd();
 		void	_pongCmd();
+		void	_quitCmd();
+
+		void	_broadcastChannel(Channel * channel, std::string message);
+		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
 
 		/* Server operations */
 		void		_register();
@@ -87,6 +92,7 @@ static enumMap _initMap() {
 	aMap["PASS"] =		PASS;
 	aMap["MODE"] =		MODE;
 	aMap["WHO"] =		WHO;
+	aMap["QUIT"] =		QUIT;
 	return aMap;
 };
 

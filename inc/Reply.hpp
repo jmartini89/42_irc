@@ -153,8 +153,10 @@ class Reply
 			// case RPL_NOUSERS:			return ":Nobody logged in";
 			case ERR_NOSUCHNICK:			return "<nickname> :No such nick/channel";
 			case ERR_NOSUCHSERVER:			return "<server name> :No such server";
-			case ERR_NOSUCHCHANNEL:			return "<channel name> :No such channel";
-			case ERR_CANNOTSENDTOCHAN:		return "<channel name> :Cannot send to channel";
+			case ERR_NOSUCHCHANNEL:			return "<channel> :No such channel";
+			// case ERR_NOSUCHCHANNEL:			return "<channel name> :No such channel";
+			case ERR_CANNOTSENDTOCHAN:		return "<channel> :Cannot send to channel";
+			// case ERR_CANNOTSENDTOCHAN:		return "<channel name> :Cannot send to channel";
 			// case ERR_TOOMANYCHANNELS:	return "<channel name> :You have joined too many channels";
 			// case ERR_WASNOSUCHNICK:		return "<nickname> :There was no such nickname";
 			// case ERR_TOOMANYTARGETS:		return "<target> :<error code> recipients. <abort message>";
