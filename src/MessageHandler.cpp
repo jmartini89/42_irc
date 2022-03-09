@@ -220,6 +220,8 @@ void MessageHandler::_pongCmd() {
 }
 
 void MessageHandler::_quitCmd() {
+	std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
+
 	close(this->_client->getFdSocket());
 	this->_client->setFdSocket(-1);
 

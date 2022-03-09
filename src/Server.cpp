@@ -170,14 +170,13 @@ void Server::_addClient()
 	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
-// new stuff is probably very wrong...
 void Server::_closeClient(int eventFd)
 {
-	Client *client = this->findClient(eventFd);
-	std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
-
-	close(eventFd);
-	client->setFdSocket(-1);
+	MessageHandler msgHandler(this->findClient(eventFd), this);
+	struct Message msg;
+	msg.cmd = QUIT;
+	msg.parameters.push_back("QUIT");
+	msgHandler(msg);
 }
 
 void Server::_messageHandler(int eventFd)

@@ -69,8 +69,8 @@ class Reply
 		switch(reply)
 		{
 			case RPL_WELCOME:				return ":Welcome to the Internet Relay Network <nick>!<user>@<host>";
-			case RPL_YOURHOST:				return "Your host is <servername>, running version <version>";
-			case RPL_CREATED:				return "This server was created <date>";
+			case RPL_YOURHOST:				return ":Your host is <servername>, running version <version>";
+			case RPL_CREATED:				return ":This server was created <date>";
 			case RPL_MYINFO:				return "<servername> <version> <available user modes> <available channel modes>";
 			// case RPL_BOUNCE:				return "Try server <server name>, port <port number>";
 			// case RPL_TRACELINK:			return "Link <version & debug level> <destination> <next server> V<protocol version> <link uptime in seconds> <backstream sendq> <upstream sendq>";
