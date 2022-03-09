@@ -58,8 +58,9 @@ class MessageParser
 				struct Message msg;
 
 				std::string lastParameter;
-				for (size_t x; (x = message[i].find(':', 1)) != std::string::npos;) {
-					lastParameter = message[i].substr(message[i].find(':', 1), message[i].size() - 1);
+				size_t x = message[i].find(':', 1);
+				if (x != std::string::npos && message[i][x - 1] == ' ') {
+					lastParameter = message[i].substr(x, message[i].size() - 1);
 					message[i].erase(x, message[i].size() - x);
 				}
 

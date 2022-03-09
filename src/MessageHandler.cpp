@@ -35,6 +35,8 @@ void MessageHandler::handleMsg()
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
+		case WHO:		break;
+		case MODE:		break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -130,6 +132,10 @@ void MessageHandler::_joinCmd() {
 				+ " " + this->_message.parameters[0] + " "
 				+ "#" + channel->getName();
 			this->sendMsg(it->first->getFdSocket(), msg);
+		}
+
+		for (clientMap::iterator it = channel->getClientMap()->begin();
+			it != channel->getClientMap()->end(); ++it) {
 			std::string nick = it->first->getNick();
 			if (it->second )
 				nick = "@" + nick;
@@ -182,7 +188,8 @@ void MessageHandler::_privMsgCmd(bool isNotice)
 	std::string header = defHeader
 						+ " " + this->_message.parameters[0] + " "
 						+ target;
-	std::string text = " :" + paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
+	std::string text = " " + this->_message.parameters[2];
+	// paramAsStr(this->_message.parameters.begin() + 2, this->_message.parameters.end());
 
 	Client *targetClient = this->_server->findClient(target);
 	if (!targetClient) {

@@ -20,7 +20,9 @@ enum Commands {
 	NOTICE,
 	PING,
 	PONG,
-	PASS
+	PASS,
+	MODE,
+	WHO
 };
 
 struct Message 
@@ -83,6 +85,8 @@ static enumMap _initMap() {
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;
+	aMap["MODE"] =		MODE;
+	aMap["WHO"] =		WHO;
 	return aMap;
 };
 
