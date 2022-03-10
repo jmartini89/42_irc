@@ -43,6 +43,34 @@ void MessageHandler::handleMsg()
 
 /* Commands */
 
+void MessageHandler::_broadcastChannel(Channel * channel, std::string message, bool excludeMe) {
+	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
+		if (!(it->first == this->_client) || !excludeMe)
+			this->sendMsg(it->first->getFdSocket(), message);
+}
+
+void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) {
+
+	std::set<Client *> clientSet;
+
+	for (std::vector<Channel *>::iterator channel = this->_server->getChannelVector()->begin();
+		channel != this->_server->getChannelVector()->end(); channel++)
+	{
+		if ((*channel)->getClientMap()->count(this->_client))
+		{
+			for (clientMap::iterator it = (*channel)->getClientMap()->begin(); it != (*channel)->getClientMap()->end(); ++it)
+			{
+				if (!(it->first == this->_client) || !excludeMe)
+				{
+					std::pair<std::set<Client *>::iterator,bool> ret;
+					ret = clientSet.insert((*it).first);
+					if (ret.second == true) this->sendMsg(it->first->getFdSocket(), message);
+				}
+			}
+		}
+	}
+}
+
 void MessageHandler::_nickCmd()
 {
 	if (this->_message.parameters.size() < 2) return serverReply(ERR_NONICKNAMEGIVEN);
@@ -56,10 +84,10 @@ void MessageHandler::_nickCmd()
 
 	if (!this->_client->isRegistered() && this->_client->isUser()) this->_register();
 	else if (this->_client->isRegistered()) {
-		// BROADCAST : CLIENT && client's joined CHANNELS
 		std::string msg = defHeader + " " + "NICK" + " " + this->_message.parameters[1];
 		msg.replace(1, this->_client->getNick().size(), oldNick);
 		this->sendMsg(this->_client->getFdSocket(), msg);
+		this->_broadcastAllChannels(msg, true);
 	}
 }
 
@@ -93,14 +121,6 @@ void MessageHandler::_passCmd()
 	else //needed in case more pwd commands are sent (only the last one must be used)
 		this->_client->setAllowed(false);
 }
-
-void MessageHandler::_broadcastChannel(Channel * channel, std::string message, bool excludeMe) {
-	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
-		if (!(it->first == this->_client) || !excludeMe)
-			this->sendMsg(it->first->getFdSocket(), message);
-}
-
-void MessageHandler::_broadcastChannel(Channel * channel, std::string message) { this->_broadcastChannel(channel, message, false); }
 
 // & prefix is for server to server connection, which is not implemented
 // TODO : translate & to #
@@ -136,7 +156,7 @@ void MessageHandler::_joinCmd() {
 		std::string msg = defHeader
 			+ " " + this->_message.parameters[0] + " "
 			+ "#" + channel->getName();
-		this->_broadcastChannel(channel, msg);
+		this->_broadcastChannel(channel, msg, false);
 
 		// channel list to client
 		for (clientMap::iterator it = channel->getClientMap()->begin();
@@ -168,7 +188,7 @@ void MessageHandler::_partCmd() {
 			+ " " + this->_message.parameters[0] + " "
 			+ "#" + channel->getName();
 		if (!reason.empty()) msg += " " + reason;
-		this->_broadcastChannel(channel, msg);
+		this->_broadcastChannel(channel, msg, false);
 
 		channel->part(this->_client);
 
@@ -231,13 +251,19 @@ void MessageHandler::_quitCmd() {
 	if (this->_message.parameters.size() > 2) text =  " " + this->_message.parameters[2];
 	std::string msg = header + text;
 
+	// TODO : BROADCAST
+
+	this->sendMsg(this->_client->getFdSocket(), msg);
+	this->_broadcastAllChannels(msg, true);
+
 	for (std::vector<Channel *>::iterator it = this->_server->getChannelVector()->begin();
 		it != this->_server->getChannelVector()->end(); ++it)
 		(*it)->getClientMap()->erase(this->_client);
 
-	for (std::vector<Client *>::iterator it = this->_server->getClientVector()->begin();
-		it != this->_server->getClientVector()->end(); ++it)
-		this->sendMsg((*it)->getFdSocket(), msg);
+	// TO BE REMOVED
+	// for (std::vector<Client *>::iterator it = this->_server->getClientVector()->begin();
+	// 	it != this->_server->getClientVector()->end(); ++it)
+	// 	this->sendMsg((*it)->getFdSocket(), msg);
 }
 
 

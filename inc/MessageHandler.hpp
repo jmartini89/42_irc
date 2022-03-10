@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <map>
+#include <set>
 
 #define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
 
@@ -70,8 +71,8 @@ class MessageHandler
 		void	_pongCmd();
 		void	_quitCmd();
 
-		void	_broadcastChannel(Channel * channel, std::string message);
 		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
+		void	_broadcastAllChannels(std::string message, bool excludeMe);
 
 		/* Server operations */
 		void		_register();
