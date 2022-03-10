@@ -39,3 +39,5 @@ bool Channel::checkKey(std::string key) const { return this->_key == key; }
 bool Channel::isEmpty() const { return this->_clientsChannel.empty(); }
 
 std::string	Channel::getName() const { return this->_name; }
+
+std::string	Channel::getTopic() const { return this->_topic; }

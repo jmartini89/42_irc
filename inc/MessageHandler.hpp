@@ -77,6 +77,7 @@ class MessageHandler
 
 		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
 		void	_broadcastAllChannels(std::string message, bool excludeMe);
+		void	_serverReplyName(Channel * channel);
 
 		/* Server operations */
 		void		_register();

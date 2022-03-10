@@ -25,12 +25,14 @@ class Channel
 		bool		checkKey(std::string key) const;
 		bool		isEmpty() const;
 		std::string	getName() const;
+		std::string	getTopic() const;
 
 	private:
 		Channel() {};
 
 		std::string		_name;
 		std::string		_key;
+		std::string		_topic;
 
 		clientMap		_clientsChannel;
 };
