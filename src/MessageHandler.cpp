@@ -247,29 +247,52 @@ void MessageHandler::_namesCmd() {
 		Channel * channel = this->_server->findChannel(nameVector[it]);
 		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL);
 
-		// // client already joined
-		// if (channel->getClientMap()->count(this->_client)) return;
+		std::string msg = defHeader
+			+ " " + this->_message.parameters[0] + " "
+			+ "#" + channel->getName();
+		this->_broadcastChannel(channel, msg, false);
 
-		// if (!channel->join(this->_client, op, keyVector[it]))
-		// 	return this->serverReply(ERR_BADCHANNELKEY);
-
-		// std::string msg = defHeader
-		// 	+ " " + this->_message.parameters[0] + " "
-		// 	+ "#" + channel->getName();
-		// this->_broadcastChannel(channel, msg, false);
-
-		// // channel list to client
-		// for (clientMap::iterator it = channel->getClientMap()->begin();
-		// 	it != channel->getClientMap()->end(); ++it) {
-		// 	std::string nick = it->first->getNick();
-		// 	if (it->second )
-		// 		nick = "@" + nick;
-		// 	serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
-		// }
-		// serverReply(RPL_ENDOFNAMES);
+		// channel list to client
+		for (clientMap::iterator it = channel->getClientMap()->begin();
+			it != channel->getClientMap()->end(); ++it) {
+			std::string nick = it->first->getNick();
+			if (it->second)
+				nick = "@" + nick;
+			serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+		}
+		serverReply(RPL_ENDOFNAMES);
 	}
 }
 
+// names copy paste : TO REWRITE
+void MessageHandler::_listCmd() {
+
+	// if (this->_message.parameters.size() < 2) return serverReply(ERR_NORECIPIENT);
+
+	// std::vector<std::string> nameVector = MessageParser::split(this->_message.parameters[1], ",");
+
+	// for (size_t it = 0; it < nameVector.size(); it++) {
+
+	// 	if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
+	// 	Channel * channel = this->_server->findChannel(nameVector[it]);
+	// 	if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL);
+
+	// 	std::string msg = defHeader
+	// 		+ " " + this->_message.parameters[0] + " "
+	// 		+ "#" + channel->getName();
+	// 	this->_broadcastChannel(channel, msg, false);
+
+	// 	// channel list to client
+	// 	for (clientMap::iterator it = channel->getClientMap()->begin();
+	// 		it != channel->getClientMap()->end(); ++it) {
+	// 		std::string nick = it->first->getNick();
+	// 		if (it->second)
+	// 			nick = "@" + nick;
+	// 		serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+	// 	}
+	// 	serverReply(RPL_ENDOFNAMES);
+	// }
+}
 
 void MessageHandler::_pongCmd() {
 
@@ -278,6 +301,7 @@ void MessageHandler::_pongCmd() {
 }
 
 void MessageHandler::_quitCmd() {
+
 	std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
 
 	close(this->_client->getFdSocket());
@@ -308,6 +332,7 @@ void MessageHandler::_quitCmd() {
 /* Server Operations */
 
 void MessageHandler::_register() {
+
 	if (!this->_client->isAllowed())
 		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
 	this->_client->setRegistered(true);
@@ -315,14 +340,15 @@ void MessageHandler::_register() {
 }
 
 void MessageHandler::_welcomeReply() {
+
 	serverReply(RPL_WELCOME);
 	serverReply(RPL_YOURHOST);
 	serverReply(RPL_CREATED);
 	serverReply(RPL_MYINFO);
 }
 
-void MessageHandler::serverReply(int code, std::string target, std::string channel)
-{
+void MessageHandler::serverReply(int code, std::string target, std::string channel) {
+
 	std::string reply = ":" + IRC_NAME + " ";
 
 	std::ostringstream code_s;
@@ -354,9 +380,10 @@ void MessageHandler::serverReply(int code, std::string target, std::string chann
 
 void MessageHandler::serverReply(int code) { serverReply(code, ""); }
 
-void MessageHandler::serverReply(int code, std::string target)  { serverReply(code, target, ""); }
+void MessageHandler::serverReply(int code, std::string target) { serverReply(code, target, ""); }
 
 void MessageHandler::sendMsg(int fd, std::string message) {
+
 	if (fd == -1) return;
 	message += CRLF;
 	send(fd, message.c_str(), message.size(), 0);

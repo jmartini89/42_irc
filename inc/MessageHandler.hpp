@@ -20,6 +20,7 @@ enum Commands {
 	PRIVMSG,
 	NOTICE,
 	NAMES,
+	LIST,
 	PING,
 	PONG,
 	PASS,
@@ -70,6 +71,7 @@ class MessageHandler
 		void	_partCmd();
 		void	_privMsgCmd(bool isNotice);
 		void	_namesCmd();
+		void	_listCmd();
 		void	_pongCmd();
 		void	_quitCmd();
 
@@ -91,6 +93,7 @@ static enumMap _initMap() {
 	aMap["PRIVMSG"] =	PRIVMSG;
 	aMap["NOTICE"] =	NOTICE;
 	aMap["NAMES"] =		NAMES;
+	aMap["LIST"] =		LIST;
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;
