@@ -19,6 +19,7 @@ enum Commands {
 	PART,
 	PRIVMSG,
 	NOTICE,
+	NAMES,
 	PING,
 	PONG,
 	PASS,
@@ -62,12 +63,13 @@ class MessageHandler
 		Server *				_server;
 
 		/* Commands */
+		void	_passCmd();
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_partCmd();
 		void	_privMsgCmd(bool isNotice);
-		void	_passCmd();
+		void	_namesCmd();
 		void	_pongCmd();
 		void	_quitCmd();
 
@@ -88,6 +90,7 @@ static enumMap _initMap() {
 	aMap["PART"] =		PART;
 	aMap["PRIVMSG"] =	PRIVMSG;
 	aMap["NOTICE"] =	NOTICE;
+	aMap["NAMES"] =		NAMES;
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;

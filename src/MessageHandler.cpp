@@ -30,6 +30,7 @@ void MessageHandler::handleMsg()
 		case PART:		_partCmd(); break;
 		case PRIVMSG:	_privMsgCmd(false); break;
 		case NOTICE:	_privMsgCmd(true); break;
+		case NAMES:		_namesCmd(); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
@@ -71,6 +72,21 @@ void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) 
 	}
 }
 
+void MessageHandler::_passCmd()
+{
+	if (this->_message.parameters.size() == 1)
+		return serverReply(ERR_NEEDMOREPARAMS);
+	if (this->_client->isRegistered())
+		return serverReply(ERR_ALREADYREGISTRED);
+
+	if (this->_message.parameters[1][0] == ':') this->_message.parameters[1].erase(0, 1);
+
+	if (this->_server->checkPwd(this->_message.parameters[1]))
+		this->_client->setAllowed(true);
+	else //needed in case more pwd commands are sent (only the last one must be used)
+		this->_client->setAllowed(false);
+}
+
 void MessageHandler::_nickCmd()
 {
 	if (this->_message.parameters.size() < 2) return serverReply(ERR_NONICKNAMEGIVEN);
@@ -105,21 +121,6 @@ void MessageHandler::_userCmd()
 	this->_client->setRealName(realName);
 
 	if (!this->_client->getNick().empty()) this->_register();
-}
-
-void MessageHandler::_passCmd()
-{
-	if (this->_message.parameters.size() == 1)
-		return serverReply(ERR_NEEDMOREPARAMS);
-	if (this->_client->isRegistered())
-		return serverReply(ERR_ALREADYREGISTRED);
-
-	if (this->_message.parameters[1][0] == ':') this->_message.parameters[1].erase(0, 1);
-
-	if (this->_server->checkPwd(this->_message.parameters[1]))
-		this->_client->setAllowed(true);
-	else //needed in case more pwd commands are sent (only the last one must be used)
-		this->_client->setAllowed(false);
 }
 
 // & prefix is for server to server connection, which is not implemented
@@ -234,7 +235,44 @@ void MessageHandler::_privMsgCmd(bool isNotice)
 	sendMsg(targetClient->getFdSocket(), msg);
 }
 
+void MessageHandler::_namesCmd() {
+
+	if (this->_message.parameters.size() < 2) return serverReply(ERR_NORECIPIENT);
+
+	std::vector<std::string> nameVector = MessageParser::split(this->_message.parameters[1], ",");
+
+	for (size_t it = 0; it < nameVector.size(); it++) {
+
+		if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
+		Channel * channel = this->_server->findChannel(nameVector[it]);
+		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL);
+
+		// // client already joined
+		// if (channel->getClientMap()->count(this->_client)) return;
+
+		// if (!channel->join(this->_client, op, keyVector[it]))
+		// 	return this->serverReply(ERR_BADCHANNELKEY);
+
+		// std::string msg = defHeader
+		// 	+ " " + this->_message.parameters[0] + " "
+		// 	+ "#" + channel->getName();
+		// this->_broadcastChannel(channel, msg, false);
+
+		// // channel list to client
+		// for (clientMap::iterator it = channel->getClientMap()->begin();
+		// 	it != channel->getClientMap()->end(); ++it) {
+		// 	std::string nick = it->first->getNick();
+		// 	if (it->second )
+		// 		nick = "@" + nick;
+		// 	serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+		// }
+		// serverReply(RPL_ENDOFNAMES);
+	}
+}
+
+
 void MessageHandler::_pongCmd() {
+
 	std::string reply = "PONG";
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
