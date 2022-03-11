@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <map>
 #include <set>
+#include <sstream>
 
 #define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
 
@@ -75,13 +76,12 @@ class MessageHandler
 		void	_pongCmd();
 		void	_quitCmd();
 
+		/* Server operations */
+		void	_register();
+		void	_welcomeReply();
 		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
 		void	_broadcastAllChannels(std::string message, bool excludeMe);
 		void	_serverReplyName(Channel * channel);
-
-		/* Server operations */
-		void		_register();
-		void		_welcomeReply();
 };
 
 static enumMap _initMap() {

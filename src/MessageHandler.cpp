@@ -45,44 +45,6 @@ void MessageHandler::handleMsg()
 
 /* Commands */
 
-void MessageHandler::_broadcastChannel(Channel * channel, std::string message, bool excludeMe) {
-	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
-		if (!(it->first == this->_client) || !excludeMe)
-			this->sendMsg(it->first->getFdSocket(), message);
-}
-
-void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) {
-
-	std::set<Client *> clientSet;
-
-	for (std::vector<Channel *>::iterator channel = this->_server->getChannelVector()->begin();
-		channel != this->_server->getChannelVector()->end(); channel++)
-	{
-		if ((*channel)->getClientMap()->count(this->_client))
-		{
-			for (clientMap::iterator it = (*channel)->getClientMap()->begin(); it != (*channel)->getClientMap()->end(); ++it)
-			{
-				if (!(it->first == this->_client) || !excludeMe)
-				{
-					std::pair<std::set<Client *>::iterator,bool> ret;
-					ret = clientSet.insert((*it).first);
-					if (ret.second == true) this->sendMsg(it->first->getFdSocket(), message);
-				}
-			}
-		}
-	}
-}
-
-void MessageHandler::_serverReplyName(Channel * channel) {
-
-	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
-		std::string nick = it->first->getNick();
-		if (it->second ) nick = "@" + nick;
-		serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
-	}
-	serverReply(RPL_ENDOFNAMES);
-}
-
 void MessageHandler::_passCmd()
 {
 	if (this->_message.parameters.size() == 1)
@@ -327,12 +289,49 @@ void MessageHandler::_welcomeReply() {
 	serverReply(RPL_MYINFO);
 }
 
-/*
-* objects instead of strings may be better in the long run, using overrides
-*/
+void MessageHandler::_broadcastChannel(Channel * channel, std::string message, bool excludeMe) {
+	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
+		if (!(it->first == this->_client) || !excludeMe)
+			this->sendMsg(it->first->getFdSocket(), message);
+}
+
+void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) {
+
+	std::set<Client *> clientSet;
+
+	for (std::vector<Channel *>::iterator channel = this->_server->getChannelVector()->begin();
+		channel != this->_server->getChannelVector()->end(); channel++)
+	{
+		if ((*channel)->getClientMap()->count(this->_client))
+		{
+			for (clientMap::iterator it = (*channel)->getClientMap()->begin(); it != (*channel)->getClientMap()->end(); ++it)
+			{
+				if (!(it->first == this->_client) || !excludeMe)
+				{
+					std::pair<std::set<Client *>::iterator,bool> ret;
+					ret = clientSet.insert((*it).first);
+					if (ret.second == true) this->sendMsg(it->first->getFdSocket(), message);
+				}
+			}
+		}
+	}
+}
+
+void MessageHandler::_serverReplyName(Channel * channel) {
+
+	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
+		std::string nick = it->first->getNick();
+		if (it->second ) nick = "@" + nick;
+		serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+	}
+	serverReply(RPL_ENDOFNAMES);
+}
+
 void MessageHandler::serverReply(int code, std::string target, std::string channel) {
 
-	Channel * channelObj = this->_server->findChannel(channel);
+	std::string findChannel;
+	if (!channel.empty()) findChannel = channel.c_str() + 1;
+	Channel * channelObj = this->_server->findChannel(findChannel);
 
 	std::string reply = ":" + IRC_NAME + " ";
 
@@ -353,8 +352,12 @@ void MessageHandler::serverReply(int code, std::string target, std::string chann
 	MessageParser::replace(reply, "<available channel modes>", CHANNEL_MODES);
 	MessageParser::replace(reply, "<nickname>", target);
 	MessageParser::replace(reply, "<channel>", channel);
-	if (channelObj) MessageParser::replace(reply, "<topic>", channelObj->getTopic());
-	// MessageParser::replace(reply, "<# visible>", channel);
+	if (channelObj) {
+		std::stringstream itoa;
+		itoa << channelObj->getClientMap()->size();
+		MessageParser::replace(reply, "<topic>", channelObj->getTopic());
+		MessageParser::replace(reply, "<# visible>", itoa.str());
+	}
 
 	// Client *targetClient = _findClient(target);
 	// if (targetClient)
