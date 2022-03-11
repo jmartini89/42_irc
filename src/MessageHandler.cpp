@@ -31,6 +31,7 @@ void MessageHandler::handleMsg()
 		case PRIVMSG:	_privMsgCmd(false); break;
 		case NOTICE:	_privMsgCmd(true); break;
 		case NAMES:		_namesCmd(); break;
+		case LIST:		_listCmd(); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
@@ -246,18 +247,16 @@ void MessageHandler::_namesCmd() {
 		if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[i]);
 		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
+		else this->_serverReplyName(channel);
 
 		/*  ?! why is this here ?! */
 		// std::string msg = defHeader
 		// 	+ " " + this->_message.parameters[0] + " "
 		// 	+ "#" + channel->getName();
 		// this->_broadcastChannel(channel, msg, false);
-
-		this->_serverReplyName(channel); // TO BE TESTED
 	}
 }
 
-/* !!! NOT TESTED !!! */
 void MessageHandler::_listCmd() {
 
 	std::vector<std::string> nameVector;
@@ -276,7 +275,7 @@ void MessageHandler::_listCmd() {
 	for (size_t i = 0; i < nameVector.size(); i++) {
 		Channel * channel = this->_server->findChannel(nameVector[i]);
 		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", "#" + nameVector[i]);
-		serverReply(RPL_LIST, "", "#" + channel->getName());
+		else serverReply(RPL_LIST, "", "#" + channel->getName());
 	}
 	serverReply(RPL_LISTEND);
 }
