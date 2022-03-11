@@ -7,6 +7,8 @@
 #include <sstream>
 #include <iomanip>
 #include <map>
+#include <set>
+#include <sstream>
 
 #define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
 
@@ -18,11 +20,14 @@ enum Commands {
 	PART,
 	PRIVMSG,
 	NOTICE,
+	NAMES,
+	LIST,
 	PING,
 	PONG,
 	PASS,
 	MODE,
-	WHO
+	WHO,
+	QUIT
 };
 
 struct Message 
@@ -34,6 +39,7 @@ struct Message
 
 class Server;
 class Client;
+class Channel;
 
 typedef std::map<std::string, int> enumMap;
 
@@ -54,23 +60,28 @@ class MessageHandler
 		void	sendMsg(int fd, std::string message);
 
 	private :
-		// std::vector<Client *>	_clientVector;
 		Client *				_client;
 		Message					_message;
 		Server *				_server;
 
 		/* Commands */
+		void	_passCmd();
 		void	_userCmd();
 		void	_nickCmd();
 		void	_joinCmd();
 		void	_partCmd();
 		void	_privMsgCmd(bool isNotice);
-		void	_passCmd();
+		void	_namesCmd();
+		void	_listCmd();
 		void	_pongCmd();
+		void	_quitCmd();
 
 		/* Server operations */
-		void		_register();
-		void		_welcomeReply();
+		void	_register();
+		void	_welcomeReply();
+		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
+		void	_broadcastAllChannels(std::string message, bool excludeMe);
+		void	_serverReplyName(Channel * channel);
 };
 
 static enumMap _initMap() {
@@ -82,11 +93,14 @@ static enumMap _initMap() {
 	aMap["PART"] =		PART;
 	aMap["PRIVMSG"] =	PRIVMSG;
 	aMap["NOTICE"] =	NOTICE;
+	aMap["NAMES"] =		NAMES;
+	aMap["LIST"] =		LIST;
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;
 	aMap["MODE"] =		MODE;
 	aMap["WHO"] =		WHO;
+	aMap["QUIT"] =		QUIT;
 	return aMap;
 };
 

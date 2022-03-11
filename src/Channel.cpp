@@ -5,7 +5,9 @@ Channel::Channel(std::string name, std::string key) : _name(name), _key(key) {
 	std::cerr << "New channel created: " << name << " " << key << std::endl;
 }
 
-Channel::~Channel() {}
+Channel::~Channel() {
+	std::cerr << "Channel " << this->_name  << " deleted" << std::endl;
+}
 
 bool Channel::operator==(std::string name) { return this->_name == name; }
 
@@ -23,7 +25,7 @@ bool Channel::join(Client * client, bool op, std::string key) {
 	return true;
 }
 
-void Channel::part(Client * client) {}
+void Channel::part(Client * client) { this->_clientsChannel.erase(client); }
 
 
 /* Getters */
@@ -37,3 +39,5 @@ bool Channel::checkKey(std::string key) const { return this->_key == key; }
 bool Channel::isEmpty() const { return this->_clientsChannel.empty(); }
 
 std::string	Channel::getName() const { return this->_name; }
+
+std::string	Channel::getTopic() const { return this->_topic; }

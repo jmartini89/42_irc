@@ -54,7 +54,7 @@ void Server::run()
 			case EVFILT_SIGNAL: return;
 
 			case EVFILT_READ:
-				if (eventFlags & EV_EOF) this->_closeClient(eventFd, false);
+				if (eventFlags & EV_EOF) this->_closeClient(eventFd);
 				else if (eventFd == this->_fdListen) this->_addClient();
 				else this->_messageHandler(eventFd);
 
@@ -89,7 +89,7 @@ Client * Server::findClient(std::string nick)
 	return (NULL);
 }
 
-std::vector<Client *> Server::getClientVector() { return this->_clientVector; }
+std::vector<Client *> * Server::getClientVector() { return &this->_clientVector; }
 
 
 /* Channels */
@@ -114,7 +114,7 @@ Channel * Server::findChannel(std::string name) {
 	return NULL;
 }
 
-// std::vector<Channel *> Server::getChannelVector() {}
+std::vector<Channel *> * Server::getChannelVector() { return &this->_channelVector; }
 
 
 /* private */
@@ -170,22 +170,13 @@ void Server::_addClient()
 	std::cerr << "Client " << client->getHostname() << " FD " << fdClient << " has connected" << std::endl;
 }
 
-// new stuff is probably very wrong...
-void Server::_closeClient(int eventFd, bool isQuit)
+void Server::_closeClient(int eventFd)
 {
-	Client *client = this->findClient(eventFd);
-
-	if (client->isConnected()) {
-		client->disconnect();
-		// BROADCAST QUIT
-	}
-
-	std::cerr << "Client " << client->getHostname() << " FD " << eventFd << " disconnected" << std::endl;
-
-	if (!isQuit) {
-		close(eventFd);
-		client->setFdSocket(-1);
-	}
+	MessageHandler msgHandler(this->findClient(eventFd), this);
+	struct Message msg;
+	msg.cmd = QUIT;
+	msg.parameters.push_back("QUIT");
+	msgHandler(msg);
 }
 
 void Server::_messageHandler(int eventFd)

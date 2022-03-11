@@ -41,13 +41,13 @@ class Server
 		/* Clients */
 		Client *	findClient(int eventFd);
 		Client *	findClient(std::string nick);
-		std::vector<Client *>	getClientVector();
+		std::vector<Client *> *		getClientVector();
 
 		/* Channels */
 		void		addChannel(Channel * channel);
 		void		removeChannel(Channel * channel);
 		Channel *	findChannel(std::string name);
-		// std::vector<Channel *>	getChannelVector(); // probably not needed
+		std::vector<Channel *> *	getChannelVector();
 		
 	private:
 		Server() {};
@@ -67,7 +67,7 @@ class Server
 		void	_setKevents();
 
 		void	_addClient();
-		void	_closeClient(int eventFd, bool isQuit);
+		void	_closeClient(int eventFd);
 		void	_messageHandler(int eventFd);
 
 		void	_debugMsgList(std::list<Message> msgList, int eventFd);
