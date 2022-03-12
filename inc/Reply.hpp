@@ -26,6 +26,7 @@
 #define RPL_CHANNELMODEIS		324
 #define RPL_NOTOPIC				331
 #define RPL_TOPIC				332
+#define RPL_INVITING			341 
 #define RPL_WHOREPLY			352
 #define RPL_NAMREPLY			353
 #define RPL_ENDOFNAMES			366
@@ -46,6 +47,7 @@
 #define ERR_NICKNAMEINUSE		433
 #define ERR_USERNOTINCHANNEL	441
 #define ERR_NOTONCHANNEL		442
+#define ERR_USERONCHANNEL		443  
 #define ERR_NOTREGISTERED		451
 #define ERR_NEEDMOREPARAMS		461
 #define ERR_ALREADYREGISTRED	462
@@ -122,7 +124,7 @@ class Reply
 			// case RPL_UNIQOPIS:			return "<channel> <nickname>";
 			case RPL_NOTOPIC:				return "<channel> :No topic is set";
 			case RPL_TOPIC:					return "<channel> :<topic>";
-			// case RPL_INVITING:			return "<channel> <nick>";
+			case RPL_INVITING:				return "<channel> <nick>";
 			// case RPL_SUMMONING:			return "<user> :Summoning user to IRC";
 			// case RPL_INVITELIST:			return "<channel> <invitemask>";
 			// case RPL_ENDOFINVITELIST:	return "<channel> :End of channel invite list";
@@ -178,7 +180,8 @@ class Reply
 			// case ERR_UNAVAILRESOURCE:	return "<nick/channel> :Nick/channel is temporarily unavailable";
 			case ERR_USERNOTINCHANNEL:		return "<nick> <channel> :They aren't on that channel";
 			case ERR_NOTONCHANNEL:			return "<channel> :You're not on that channel";
-			// case ERR_USERONCHANNEL:		return "<user> <channel> :is already on channel";
+			// case ERR_USERONCHANNEL:			return "<user> <channel> :is already on channel";
+			case ERR_USERONCHANNEL:			return "<nick> <channel> :is already on channel";
 			// case ERR_NOLOGIN:			return "<user> :User not logged in";
 			// case ERR_SUMMONDISABLED:		return ":SUMMON has been disabled";
 			// case ERR_USERSDISABLED:		return ":USERS has been disabled";
@@ -194,7 +197,7 @@ class Reply
 			case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
 			// case ERR_BANNEDFROMCHAN:		return "<channel> :Cannot join channel (+b)";
-			case ERR_BADCHANNELKEY:		return "<channel> :Cannot join channel (+k)";
+			case ERR_BADCHANNELKEY:			return "<channel> :Cannot join channel (+k)";
 			// case ERR_BADCHANMASK:		return "<channel> :Bad Channel Mask";
 			// case ERR_NOCHANMODES:		return "<channel> :Channel doesn't support modes";
 			// case ERR_BANLISTFULL:		return "<channel> <char> :Channel list is full";

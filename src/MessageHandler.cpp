@@ -2,7 +2,6 @@
 #include "Server.hpp"
 #include "Reply.hpp"
 
-//TODO use client and clientVector from server
 MessageHandler::MessageHandler(Client * client, Server * server) {
 	this->_client = client;
 	this->_server = server;
@@ -18,7 +17,10 @@ void MessageHandler::operator()(struct Message msg)
 
 void MessageHandler::handleMsg()
 {
-	if (!(this->_message.cmd == NICK || this->_message.cmd == USER || this->_message.cmd == PASS)
+	if (!(this->_message.cmd == NICK 
+		|| this->_message.cmd == USER 
+		|| this->_message.cmd == PASS 
+		|| this->_message.cmd == QUIT)
 		&& !this->_client->isRegistered())
 		return serverReply(ERR_NOTREGISTERED);
 
@@ -32,6 +34,7 @@ void MessageHandler::handleMsg()
 		case NOTICE:	_privMsgCmd(true); break;
 		case NAMES:		_namesCmd(); break;
 		case LIST:		_listCmd(); break;
+		case INVITE:	_inviteCmd(); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
@@ -270,13 +273,47 @@ void MessageHandler::_quitCmd() {
 }
 
 
+void MessageHandler::_inviteCmd() 
+{
+	if (this->_message.parameters.size() < 3)
+		return (serverReply(ERR_NEEDMOREPARAMS));
+	
+	Client *toInvite = this->_server->findClient(this->_message.parameters[1]);
+	if (!toInvite)
+		return (serverReply(ERR_NOSUCHNICK));
+
+	Channel *channel = this->_server->findChannel(this->_message.parameters[2]);
+	if (!channel)
+		return (serverReply(ERR_NOSUCHCHANNEL));
+
+	bool imInChannel = channel->getClientMap()->find(this->_client) != channel->getClientMap()->end();
+	if (!imInChannel)
+		return (serverReply(ERR_NOTONCHANNEL));
+	
+	bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+	if (!imOperator)
+		return (serverReply(ERR_CHANOPRIVSNEEDED));
+
+	bool hesInChannel = channel->getClientMap()->find(toInvite) != channel->getClientMap()->end();
+	if (hesInChannel)
+		return (serverReply(ERR_USERONCHANNEL));
+
+	std::string msg = defHeader + " INVITE " + this->_message.parameters[1] + " "+ this->_message.parameters[2];
+	this->sendMsg(toInvite->getFdSocket(), msg);
+}
+
 /* Server Operations */
 
-/* !!! TODO implement kick on fail !!! */
 void MessageHandler::_register() {
 
 	if (!this->_client->isAllowed())
-		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
+	{
+		serverReply(ERR_PASSWDMISMATCH);
+		std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
+		close(this->_client->getFdSocket());
+		this->_client->setFdSocket(-1);
+		return;
+	}
 	this->_client->setRegistered(true);
 	return this->_welcomeReply();
 }
@@ -330,7 +367,8 @@ void MessageHandler::_serverReplyName(Channel * channel) {
 void MessageHandler::serverReply(int code, std::string target, std::string channel) {
 
 	std::string findChannel;
-	if (!channel.empty()) findChannel = channel.c_str() + 1;
+	if (!channel.empty())
+		findChannel = channel.c_str() + 1;
 	Channel * channelObj = this->_server->findChannel(findChannel);
 
 	std::string reply = ":" + IRC_NAME + " ";

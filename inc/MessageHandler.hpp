@@ -22,6 +22,7 @@ enum Commands {
 	NOTICE,
 	NAMES,
 	LIST,
+	INVITE,
 	PING,
 	PONG,
 	PASS,
@@ -73,6 +74,7 @@ class MessageHandler
 		void	_privMsgCmd(bool isNotice);
 		void	_namesCmd();
 		void	_listCmd();
+		void	_inviteCmd();
 		void	_pongCmd();
 		void	_quitCmd();
 
@@ -95,6 +97,7 @@ static enumMap _initMap() {
 	aMap["NOTICE"] =	NOTICE;
 	aMap["NAMES"] =		NAMES;
 	aMap["LIST"] =		LIST;
+	aMap["INVITE"] =	INVITE;
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;
