@@ -54,6 +54,7 @@
 #define ERR_PASSWDMISMATCH		464
 #define ERR_UNKNOWNMODE			472
 #define ERR_BADCHANNELKEY		475
+#define ERR_BADCHANMASK			476
 #define ERR_NOPRIVILEGES		481
 #define ERR_CHANOPRIVSNEEDED	482
 #define ERR_UMODEUNKNOWNFLAG	501
@@ -178,7 +179,7 @@ class Reply
 			case ERR_NICKNAMEINUSE:			return "<nick> :Nickname is already in use";
 			// case ERR_NICKCOLLISION:		return "<nick> :Nickname collision KILL from <user>@<host>";
 			// case ERR_UNAVAILRESOURCE:	return "<nick/channel> :Nick/channel is temporarily unavailable";
-			case ERR_USERNOTINCHANNEL:		return "<nick> <channel> :They aren't on that channel";
+			case ERR_USERNOTINCHANNEL:		return "<nickname> <channel> :They aren't on that channel";
 			case ERR_NOTONCHANNEL:			return "<channel> :You're not on that channel";
 			// case ERR_USERONCHANNEL:			return "<user> <channel> :is already on channel";
 			case ERR_USERONCHANNEL:			return "<nick> <channel> :is already on channel";
@@ -198,7 +199,7 @@ class Reply
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
 			// case ERR_BANNEDFROMCHAN:		return "<channel> :Cannot join channel (+b)";
 			case ERR_BADCHANNELKEY:			return "<channel> :Cannot join channel (+k)";
-			// case ERR_BADCHANMASK:		return "<channel> :Bad Channel Mask";
+			case ERR_BADCHANMASK:			return "<channel> :Bad Channel Mask";
 			// case ERR_NOCHANMODES:		return "<channel> :Channel doesn't support modes";
 			// case ERR_BANLISTFULL:		return "<channel> <char> :Channel list is full";
 			case ERR_NOPRIVILEGES:			return ":Permission Denied- You're not an IRC operator";

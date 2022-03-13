@@ -41,6 +41,7 @@ void MessageHandler::handleMsg()
 		case WHO:		break; // TODO ?
 		case MODE:		break; // TODO
 		case QUIT:		_quitCmd(); break;
+		case KICK:		_kickCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -284,7 +285,7 @@ void MessageHandler::_inviteCmd()
 
 	Channel *channel = this->_server->findChannel(this->_message.parameters[2]);
 	if (!channel)
-		return (serverReply(ERR_NOSUCHCHANNEL));
+		return (serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[2]));
 
 	bool imInChannel = channel->getClientMap()->find(this->_client) != channel->getClientMap()->end();
 	if (!imInChannel)
@@ -300,6 +301,77 @@ void MessageHandler::_inviteCmd()
 
 	std::string msg = defHeader + " INVITE " + this->_message.parameters[1] + " "+ this->_message.parameters[2];
 	this->sendMsg(toInvite->getFdSocket(), msg);
+}
+
+
+void MessageHandler::_kickCmd() 
+{
+	if (this->_message.parameters.size() < 3)
+		return serverReply(ERR_NEEDMOREPARAMS);
+
+	std::vector<std::string> channelsName = MessageParser::split(this->_message.parameters[1], ",");
+	int channelCount = channelsName.size();
+
+	std::vector<std::string> usersName = MessageParser::split(this->_message.parameters[2], ",");
+	int usersCount = usersName.size();
+
+	if (channelCount > 1 && channelCount != usersCount)
+		return serverReply(ERR_BADCHANMASK);
+
+	std::string reason;
+	if (this->_message.parameters.size() == 4)
+		reason = this->_message.parameters[3];
+
+	for (int i = 0; i < channelCount; i++)
+	{
+		Channel *channel = this->_server->findChannel(channelsName[i]);
+		if (!channel)
+		{
+			serverReply(ERR_NOSUCHCHANNEL, "", channelsName[i]);
+			continue;
+		}
+
+		bool imInChannel = channel->getClientMap()->find(this->_client) != channel->getClientMap()->end();
+		if (!imInChannel)
+		{
+			serverReply(ERR_NOTONCHANNEL);
+			continue;
+		}
+
+		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		if (!imOperator)
+		{
+			serverReply(ERR_CHANOPRIVSNEEDED);
+			continue;
+		}
+
+		for (int j = 0; j < usersName.size(); j++)
+		{
+			/* This "if" statement is here to handle this rule from RFC:
+			 * 		For the message to be syntactically correct, there MUST be
+   			 * 		either one channel parameter and multiple user parameter, or as many
+   			 * 		channel parameters as there are user parameters */
+			if (channelsName.size() > 1)
+				j = i;					
+			
+			Client *client = this->_server->findClient(usersName[j]);
+			bool hesInChannel = false;
+			if (client)
+				hesInChannel = channel->getClientMap()->find(client) != channel->getClientMap()->end();
+			if (hesInChannel)
+			{
+				std::string msg = defHeader + " KICK "+ channelsName[i]+ " " +  usersName[j] +" :" ;
+				if (!reason.empty())
+					msg += reason;
+				this->_broadcastChannel(channel, msg, false);
+				channel->part(client);
+			}
+			else
+				serverReply(ERR_USERNOTINCHANNEL, usersName[j], channelsName[i]);
+		}
+		if (channel->getClientMap()->empty())
+			this->_server->removeChannel(channel);
+	}
 }
 
 /* Server Operations */
