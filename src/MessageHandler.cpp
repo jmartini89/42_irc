@@ -351,7 +351,7 @@ void MessageHandler::_kickCmd()
 			 * 		For the message to be syntactically correct, there MUST be
    			 * 		either one channel parameter and multiple user parameter, or as many
    			 * 		channel parameters as there are user parameters */
-			if (channelsName.size() > 1)
+			if (channelCount > 1)
 				j = i;					
 			
 			Client *client = this->_server->findClient(usersName[j]);
@@ -360,9 +360,9 @@ void MessageHandler::_kickCmd()
 				hesInChannel = channel->getClientMap()->find(client) != channel->getClientMap()->end();
 			if (hesInChannel)
 			{
-				std::string msg = defHeader + " KICK "+ channelsName[i]+ " " +  usersName[j] +" :" ;
+				std::string msg = defHeader + " KICK "+ channelsName[i]+ " " +  usersName[j] ;
 				if (!reason.empty())
-					msg += reason;
+					msg +=  " :" + reason;
 				this->_broadcastChannel(channel, msg, false);
 				channel->part(client);
 			}
