@@ -368,6 +368,9 @@ void MessageHandler::_kickCmd()
 			}
 			else
 				serverReply(ERR_USERNOTINCHANNEL, usersName[j], channelsName[i]);
+				
+			if (channelCount > 1)
+				break;	
 		}
 		if (channel->getClientMap()->empty())
 			this->_server->removeChannel(channel);
