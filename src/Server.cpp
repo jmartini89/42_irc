@@ -99,17 +99,18 @@ void Server::addChannel(Channel * channel) { this->_channelVector.push_back(chan
 void Server::removeChannel(Channel * channel) {
 	for (std::vector<Channel *>::iterator it = this->_channelVector.begin(); it < this->_channelVector.end(); it++)
 		if ((*it) == channel) {
+			Channel *c = *it;
 			this->_channelVector.erase(it);
-			delete (*it);
+			delete (c);
 			return;
 		}
 	std::cerr << "removeChannel failed" << std::endl;
 }
 
 Channel * Server::findChannel(std::string name) {
-	for (size_t it = 0; it < this->_channelVector.size(); it++) {
-		if (*this->_channelVector[it] == name)
-			return this->_channelVector[it];
+	for (size_t i = 0; i < this->_channelVector.size(); i++) {
+		if (*this->_channelVector[i] == name)
+			return this->_channelVector[i];
 	}
 	return NULL;
 }

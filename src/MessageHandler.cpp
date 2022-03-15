@@ -115,7 +115,6 @@ void MessageHandler::_joinCmd() {
 	for (size_t it = 0; it < nameVector.size(); it++) {
 		bool op = false;
 
-		if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[it]);
 		if (channel == NULL) {
 			channel = new Channel(nameVector[it], keyVector[it]);
@@ -130,8 +129,8 @@ void MessageHandler::_joinCmd() {
 			return this->serverReply(ERR_BADCHANNELKEY);
 
 		std::string msg = defHeader
-			+ " " + this->_message.parameters[0] + " "
-			+ "#" + channel->getName();
+			+ " " + this->_message.parameters[0]
+			+ " " + channel->getName();
 		this->_broadcastChannel(channel, msg, false);
 
 		this->_serverReplyName(channel); // TO BE TESTED
@@ -146,15 +145,17 @@ void MessageHandler::_partCmd() {
 	if (this->_message.parameters.size() > 2) reason = this->_message.parameters[2];
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
-		if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
 
 		Channel * channel = this->_server->findChannel(nameVector[i]);
-		if (channel == NULL) return this->serverReply(ERR_NOSUCHCHANNEL, "", "#" + nameVector[i]);
+		if (channel == NULL) return this->serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
+
+		std::cout << channel->getName() << std::endl;
+
 		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_NOTONCHANNEL);
 
 		std::string msg = defHeader
-			+ " " + this->_message.parameters[0] + " "
-			+ "#" + channel->getName();
+			+ " " + this->_message.parameters[0]
+			+ " " + channel->getName();
 		if (!reason.empty()) msg += " " + reason;
 		this->_broadcastChannel(channel, msg, false);
 
@@ -185,7 +186,6 @@ void MessageHandler::_privMsgCmd(bool isNotice)
 
 	// channel message
 	if (target.front() == '#') {
-		target.erase(0, 1);
 		Channel * channel = this->_server->findChannel(target);
 		if (channel == NULL) return this->serverReply(ERR_CANNOTSENDTOCHAN);
 		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_CANNOTSENDTOCHAN);
@@ -210,16 +210,9 @@ void MessageHandler::_namesCmd() {
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
 
-		if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[i]);
 		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
 		else this->_serverReplyName(channel);
-
-		/*  ?! why is this here ?! */
-		// std::string msg = defHeader
-		// 	+ " " + this->_message.parameters[0] + " "
-		// 	+ "#" + channel->getName();
-		// this->_broadcastChannel(channel, msg, false);
 	}
 }
 
@@ -232,16 +225,13 @@ void MessageHandler::_listCmd() {
 		for (std::vector<Channel *>::iterator it = channelVector->begin(); it < channelVector->end(); ++it)
 			nameVector.push_back((*it)->getName());
 	}
-	else {
+	else
 		nameVector = MessageParser::split(this->_message.parameters[1], ",");
-		for (size_t i = 0; i < nameVector.size(); i++)
-			if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
-	}
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
 		Channel * channel = this->_server->findChannel(nameVector[i]);
-		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", "#" + nameVector[i]);
-		else serverReply(RPL_LIST, "", "#" + channel->getName());
+		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
+		else serverReply(RPL_LIST, "", channel->getName());
 	}
 	serverReply(RPL_LISTEND);
 }
@@ -299,7 +289,7 @@ void MessageHandler::_inviteCmd()
 	if (hesInChannel)
 		return (serverReply(ERR_USERONCHANNEL));
 
-	std::string msg = defHeader + " INVITE " + this->_message.parameters[1] + " "+ this->_message.parameters[2];
+	std::string msg = defHeader + " INVITE " + this->_message.parameters[1] + " " + this->_message.parameters[2];
 	this->sendMsg(toInvite->getFdSocket(), msg);
 }
 
@@ -360,7 +350,7 @@ void MessageHandler::_kickCmd()
 				hesInChannel = channel->getClientMap()->find(client) != channel->getClientMap()->end();
 			if (hesInChannel)
 			{
-				std::string msg = defHeader + " KICK "+ channelsName[i]+ " " +  usersName[j] ;
+				std::string msg = defHeader + " KICK " + channelsName[i]+ " " +  usersName[j] ;
 				if (!reason.empty())
 					msg +=  " :" + reason;
 				this->_broadcastChannel(channel, msg, false);
@@ -370,7 +360,7 @@ void MessageHandler::_kickCmd()
 				serverReply(ERR_USERNOTINCHANNEL, usersName[j], channelsName[i]);
 				
 			if (channelCount > 1)
-				break;	
+				break;
 		}
 		if (channel->getClientMap()->empty())
 			this->_server->removeChannel(channel);
@@ -434,17 +424,14 @@ void MessageHandler::_serverReplyName(Channel * channel) {
 	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
 		std::string nick = it->first->getNick();
 		if (it->second ) nick = "@" + nick;
-		serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+		serverReply(RPL_NAMREPLY, nick, channel->getName());
 	}
 	serverReply(RPL_ENDOFNAMES);
 }
 
 void MessageHandler::serverReply(int code, std::string target, std::string channel) {
 
-	std::string findChannel;
-	if (!channel.empty())
-		findChannel = channel.c_str() + 1;
-	Channel * channelObj = this->_server->findChannel(findChannel);
+	Channel * channelObj = this->_server->findChannel(channel);
 
 	std::string reply = ":" + IRC_NAME + " ";
 
