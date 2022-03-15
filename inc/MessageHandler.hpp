@@ -29,7 +29,8 @@ enum Commands {
 	MODE,
 	WHO,
 	QUIT,
-	KICK
+	KICK,
+	TOPIC
 };
 
 struct Message 
@@ -79,6 +80,7 @@ class MessageHandler
 		void	_pongCmd();
 		void	_quitCmd();
 		void	_kickCmd();
+		void	_topicCmd();
 
 		/* Server operations */
 		void	_register();
@@ -107,6 +109,7 @@ static enumMap _initMap() {
 	aMap["WHO"] =		WHO;
 	aMap["QUIT"] =		QUIT;
 	aMap["KICK"] =		KICK;
+	aMap["TOPIC"] =		TOPIC;
 	return aMap;
 };
 

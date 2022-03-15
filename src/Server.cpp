@@ -96,15 +96,14 @@ std::vector<Client *> * Server::getClientVector() { return &this->_clientVector;
 
 void Server::addChannel(Channel * channel) { this->_channelVector.push_back(channel); }
 
-void Server::removeChannel(Channel * channel) {
+std::vector<Channel *>::iterator Server::removeChannel(Channel * channel) {
 	for (std::vector<Channel *>::iterator it = this->_channelVector.begin(); it < this->_channelVector.end(); it++)
 		if ((*it) == channel) {
-			Channel *c = *it;
-			this->_channelVector.erase(it);
-			delete (c);
-			return;
+			delete (*it);
+			return this->_channelVector.erase(it);
 		}
 	std::cerr << "removeChannel failed" << std::endl;
+	return this->_channelVector.end();
 }
 
 Channel * Server::findChannel(std::string name) {

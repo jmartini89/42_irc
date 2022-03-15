@@ -42,6 +42,7 @@ void MessageHandler::handleMsg()
 		case MODE:		break; // TODO
 		case QUIT:		_quitCmd(); break;
 		case KICK:		_kickCmd(); break;
+		case TOPIC:		_topicCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -259,8 +260,13 @@ void MessageHandler::_quitCmd() {
 	this->_broadcastAllChannels(msg, true);
 
 	for (std::vector<Channel *>::iterator it = this->_server->getChannelVector()->begin();
-		it != this->_server->getChannelVector()->end(); ++it)
-		(*it)->getClientMap()->erase(this->_client);
+		it != this->_server->getChannelVector()->end();)
+	{
+		(*it)->part(this->_client);
+		if ((*it)->getClientMap()->empty())
+			it = this->_server->removeChannel(*it);
+		else it++;
+	}
 }
 
 
@@ -294,7 +300,7 @@ void MessageHandler::_inviteCmd()
 }
 
 
-void MessageHandler::_kickCmd() 
+void MessageHandler::_kickCmd()
 {
 	if (this->_message.parameters.size() < 3)
 		return serverReply(ERR_NEEDMOREPARAMS);
@@ -331,19 +337,16 @@ void MessageHandler::_kickCmd()
 		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
 		if (!imOperator)
 		{
-			serverReply(ERR_CHANOPRIVSNEEDED);
+			serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
 			continue;
 		}
 
 		for (int j = 0; j < usersName.size(); j++)
 		{
-			/* This "if" statement is here to handle this rule from RFC:
-			 * 		For the message to be syntactically correct, there MUST be
-   			 * 		either one channel parameter and multiple user parameter, or as many
-   			 * 		channel parameters as there are user parameters */
+			/* there MUST be either one channel parameter and multiple user parameter, or as many channel parameters as there are user parameters */
 			if (channelCount > 1)
-				j = i;					
-			
+				j = i;
+
 			Client *client = this->_server->findClient(usersName[j]);
 			bool hesInChannel = false;
 			if (client)
@@ -366,6 +369,31 @@ void MessageHandler::_kickCmd()
 			this->_server->removeChannel(channel);
 	}
 }
+
+void MessageHandler::_topicCmd()
+{
+	if (this->_message.parameters.size() < 2) return serverReply(ERR_NEEDMOREPARAMS);
+
+	Channel * channel = this->_server->findChannel(this->_message.parameters[1]);
+	if (!channel)
+		return serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[1]);
+
+	bool imInChannel = (channel->getClientMap()->find(this->_client) != channel->getClientMap()->end());
+	if (!imInChannel)
+		return serverReply(ERR_NOTONCHANNEL);
+
+	if (this->_message.parameters.size() == 3)
+	{
+		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		if (!imOperator)
+			return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
+
+		channel->setTopic(this->_message.parameters[2]);
+	}
+
+	serverReply(RPL_TOPIC, "", channel->getName());
+}
+
 
 /* Server Operations */
 

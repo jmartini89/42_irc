@@ -26,6 +26,7 @@ class Channel
 		bool		isEmpty() const;
 		std::string	getName() const;
 		std::string	getTopic() const;
+		void		setTopic(std::string topic);
 
 	private:
 		Channel() {};
