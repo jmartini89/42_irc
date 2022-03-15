@@ -2,7 +2,6 @@
 #include "Server.hpp"
 #include "Reply.hpp"
 
-//TODO use client and clientVector from server
 MessageHandler::MessageHandler(Client * client, Server * server) {
 	this->_client = client;
 	this->_server = server;
@@ -18,7 +17,10 @@ void MessageHandler::operator()(struct Message msg)
 
 void MessageHandler::handleMsg()
 {
-	if (!(this->_message.cmd == NICK || this->_message.cmd == USER || this->_message.cmd == PASS)
+	if (!(this->_message.cmd == NICK 
+		|| this->_message.cmd == USER 
+		|| this->_message.cmd == PASS 
+		|| this->_message.cmd == QUIT)
 		&& !this->_client->isRegistered())
 		return serverReply(ERR_NOTREGISTERED);
 
@@ -32,12 +34,15 @@ void MessageHandler::handleMsg()
 		case NOTICE:	_privMsgCmd(true); break;
 		case NAMES:		_namesCmd(); break;
 		case LIST:		_listCmd(); break;
+		case INVITE:	_inviteCmd(); break;
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
 		case WHO:		break; // TODO ?
 		case MODE:		break; // TODO
 		case QUIT:		_quitCmd(); break;
+		case KICK:		_kickCmd(); break;
+		case TOPIC:		_topicCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -111,7 +116,6 @@ void MessageHandler::_joinCmd() {
 	for (size_t it = 0; it < nameVector.size(); it++) {
 		bool op = false;
 
-		if (nameVector[it].front() == '#') nameVector[it].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[it]);
 		if (channel == NULL) {
 			channel = new Channel(nameVector[it], keyVector[it]);
@@ -126,8 +130,8 @@ void MessageHandler::_joinCmd() {
 			return this->serverReply(ERR_BADCHANNELKEY);
 
 		std::string msg = defHeader
-			+ " " + this->_message.parameters[0] + " "
-			+ "#" + channel->getName();
+			+ " " + this->_message.parameters[0]
+			+ " " + channel->getName();
 		this->_broadcastChannel(channel, msg, false);
 
 		this->_serverReplyName(channel); // TO BE TESTED
@@ -142,15 +146,17 @@ void MessageHandler::_partCmd() {
 	if (this->_message.parameters.size() > 2) reason = this->_message.parameters[2];
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
-		if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
 
 		Channel * channel = this->_server->findChannel(nameVector[i]);
-		if (channel == NULL) return this->serverReply(ERR_NOSUCHCHANNEL, "", "#" + nameVector[i]);
+		if (channel == NULL) return this->serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
+
+		std::cout << channel->getName() << std::endl;
+
 		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_NOTONCHANNEL);
 
 		std::string msg = defHeader
-			+ " " + this->_message.parameters[0] + " "
-			+ "#" + channel->getName();
+			+ " " + this->_message.parameters[0]
+			+ " " + channel->getName();
 		if (!reason.empty()) msg += " " + reason;
 		this->_broadcastChannel(channel, msg, false);
 
@@ -181,7 +187,6 @@ void MessageHandler::_privMsgCmd(bool isNotice)
 
 	// channel message
 	if (target.front() == '#') {
-		target.erase(0, 1);
 		Channel * channel = this->_server->findChannel(target);
 		if (channel == NULL) return this->serverReply(ERR_CANNOTSENDTOCHAN);
 		if (!channel->getClientMap()->count(this->_client)) return this->serverReply(ERR_CANNOTSENDTOCHAN);
@@ -206,16 +211,9 @@ void MessageHandler::_namesCmd() {
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
 
-		if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
 		Channel * channel = this->_server->findChannel(nameVector[i]);
 		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
 		else this->_serverReplyName(channel);
-
-		/*  ?! why is this here ?! */
-		// std::string msg = defHeader
-		// 	+ " " + this->_message.parameters[0] + " "
-		// 	+ "#" + channel->getName();
-		// this->_broadcastChannel(channel, msg, false);
 	}
 }
 
@@ -228,16 +226,13 @@ void MessageHandler::_listCmd() {
 		for (std::vector<Channel *>::iterator it = channelVector->begin(); it < channelVector->end(); ++it)
 			nameVector.push_back((*it)->getName());
 	}
-	else {
+	else
 		nameVector = MessageParser::split(this->_message.parameters[1], ",");
-		for (size_t i = 0; i < nameVector.size(); i++)
-			if (nameVector[i].front() == '#') nameVector[i].erase(0, 1);
-	}
 
 	for (size_t i = 0; i < nameVector.size(); i++) {
 		Channel * channel = this->_server->findChannel(nameVector[i]);
-		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", "#" + nameVector[i]);
-		else serverReply(RPL_LIST, "", "#" + channel->getName());
+		if (channel == NULL) serverReply(ERR_NOSUCHCHANNEL, "", nameVector[i]);
+		else serverReply(RPL_LIST, "", channel->getName());
 	}
 	serverReply(RPL_LISTEND);
 }
@@ -265,18 +260,153 @@ void MessageHandler::_quitCmd() {
 	this->_broadcastAllChannels(msg, true);
 
 	for (std::vector<Channel *>::iterator it = this->_server->getChannelVector()->begin();
-		it != this->_server->getChannelVector()->end(); ++it)
-		(*it)->getClientMap()->erase(this->_client);
+		it != this->_server->getChannelVector()->end();)
+	{
+		(*it)->part(this->_client);
+		if ((*it)->getClientMap()->empty())
+			it = this->_server->removeChannel(*it);
+		else it++;
+	}
+}
+
+
+void MessageHandler::_inviteCmd() 
+{
+	if (this->_message.parameters.size() < 3)
+		return (serverReply(ERR_NEEDMOREPARAMS));
+	
+	Client *toInvite = this->_server->findClient(this->_message.parameters[1]);
+	if (!toInvite)
+		return (serverReply(ERR_NOSUCHNICK));
+
+	Channel *channel = this->_server->findChannel(this->_message.parameters[2]);
+	if (!channel)
+		return (serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[2]));
+
+	bool imInChannel = channel->getClientMap()->find(this->_client) != channel->getClientMap()->end();
+	if (!imInChannel)
+		return (serverReply(ERR_NOTONCHANNEL));
+	
+	bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+	if (!imOperator)
+		return (serverReply(ERR_CHANOPRIVSNEEDED));
+
+	bool hesInChannel = channel->getClientMap()->find(toInvite) != channel->getClientMap()->end();
+	if (hesInChannel)
+		return (serverReply(ERR_USERONCHANNEL));
+
+	std::string msg = defHeader + " INVITE " + this->_message.parameters[1] + " " + this->_message.parameters[2];
+	this->sendMsg(toInvite->getFdSocket(), msg);
+}
+
+
+void MessageHandler::_kickCmd()
+{
+	if (this->_message.parameters.size() < 3)
+		return serverReply(ERR_NEEDMOREPARAMS);
+
+	std::vector<std::string> channelsName = MessageParser::split(this->_message.parameters[1], ",");
+	int channelCount = channelsName.size();
+
+	std::vector<std::string> usersName = MessageParser::split(this->_message.parameters[2], ",");
+	int usersCount = usersName.size();
+
+	if (channelCount > 1 && channelCount != usersCount)
+		return serverReply(ERR_BADCHANMASK);
+
+	std::string reason;
+	if (this->_message.parameters.size() == 4)
+		reason = this->_message.parameters[3];
+
+	for (int i = 0; i < channelCount; i++)
+	{
+		Channel *channel = this->_server->findChannel(channelsName[i]);
+		if (!channel)
+		{
+			serverReply(ERR_NOSUCHCHANNEL, "", channelsName[i]);
+			continue;
+		}
+
+		bool imInChannel = channel->getClientMap()->find(this->_client) != channel->getClientMap()->end();
+		if (!imInChannel)
+		{
+			serverReply(ERR_NOTONCHANNEL);
+			continue;
+		}
+
+		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		if (!imOperator)
+		{
+			serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
+			continue;
+		}
+
+		for (int j = 0; j < usersName.size(); j++)
+		{
+			/* there MUST be either one channel parameter and multiple user parameter, or as many channel parameters as there are user parameters */
+			if (channelCount > 1)
+				j = i;
+
+			Client *client = this->_server->findClient(usersName[j]);
+			bool hesInChannel = false;
+			if (client)
+				hesInChannel = channel->getClientMap()->find(client) != channel->getClientMap()->end();
+			if (hesInChannel)
+			{
+				std::string msg = defHeader + " KICK " + channelsName[i]+ " " +  usersName[j] ;
+				if (!reason.empty())
+					msg +=  " :" + reason;
+				this->_broadcastChannel(channel, msg, false);
+				channel->part(client);
+			}
+			else
+				serverReply(ERR_USERNOTINCHANNEL, usersName[j], channelsName[i]);
+				
+			if (channelCount > 1)
+				break;
+		}
+		if (channel->getClientMap()->empty())
+			this->_server->removeChannel(channel);
+	}
+}
+
+void MessageHandler::_topicCmd()
+{
+	if (this->_message.parameters.size() < 2) return serverReply(ERR_NEEDMOREPARAMS);
+
+	Channel * channel = this->_server->findChannel(this->_message.parameters[1]);
+	if (!channel)
+		return serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[1]);
+
+	bool imInChannel = (channel->getClientMap()->find(this->_client) != channel->getClientMap()->end());
+	if (!imInChannel)
+		return serverReply(ERR_NOTONCHANNEL);
+
+	if (this->_message.parameters.size() == 3)
+	{
+		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		if (!imOperator)
+			return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
+
+		channel->setTopic(this->_message.parameters[2]);
+	}
+
+	serverReply(RPL_TOPIC, "", channel->getName());
 }
 
 
 /* Server Operations */
 
-/* !!! TODO implement kick on fail !!! */
 void MessageHandler::_register() {
 
 	if (!this->_client->isAllowed())
-		return serverReply(ERR_PASSWDMISMATCH); //TODO kick out client
+	{
+		serverReply(ERR_PASSWDMISMATCH);
+		std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
+		close(this->_client->getFdSocket());
+		this->_client->setFdSocket(-1);
+		return;
+	}
 	this->_client->setRegistered(true);
 	return this->_welcomeReply();
 }
@@ -322,16 +452,14 @@ void MessageHandler::_serverReplyName(Channel * channel) {
 	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
 		std::string nick = it->first->getNick();
 		if (it->second ) nick = "@" + nick;
-		serverReply(RPL_NAMREPLY, nick, "#" + channel->getName());
+		serverReply(RPL_NAMREPLY, nick, channel->getName());
 	}
 	serverReply(RPL_ENDOFNAMES);
 }
 
 void MessageHandler::serverReply(int code, std::string target, std::string channel) {
 
-	std::string findChannel;
-	if (!channel.empty()) findChannel = channel.c_str() + 1;
-	Channel * channelObj = this->_server->findChannel(findChannel);
+	Channel * channelObj = this->_server->findChannel(channel);
 
 	std::string reply = ":" + IRC_NAME + " ";
 

@@ -44,10 +44,10 @@ class Server
 		std::vector<Client *> *		getClientVector();
 
 		/* Channels */
-		void		addChannel(Channel * channel);
-		void		removeChannel(Channel * channel);
-		Channel *	findChannel(std::string name);
-		std::vector<Channel *> *	getChannelVector();
+		void								addChannel(Channel * channel);
+		std::vector<Channel *>::iterator	removeChannel(Channel * channel);
+		Channel *							findChannel(std::string name);
+		std::vector<Channel *> *			getChannelVector();
 		
 	private:
 		Server() {};

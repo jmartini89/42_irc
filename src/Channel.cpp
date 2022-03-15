@@ -41,3 +41,8 @@ bool Channel::isEmpty() const { return this->_clientsChannel.empty(); }
 std::string	Channel::getName() const { return this->_name; }
 
 std::string	Channel::getTopic() const { return this->_topic; }
+
+
+/* Setters */
+
+void Channel::setTopic(std::string topic) { this->_topic = topic; }

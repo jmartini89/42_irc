@@ -22,12 +22,15 @@ enum Commands {
 	NOTICE,
 	NAMES,
 	LIST,
+	INVITE,
 	PING,
 	PONG,
 	PASS,
 	MODE,
 	WHO,
-	QUIT
+	QUIT,
+	KICK,
+	TOPIC
 };
 
 struct Message 
@@ -73,8 +76,11 @@ class MessageHandler
 		void	_privMsgCmd(bool isNotice);
 		void	_namesCmd();
 		void	_listCmd();
+		void	_inviteCmd();
 		void	_pongCmd();
 		void	_quitCmd();
+		void	_kickCmd();
+		void	_topicCmd();
 
 		/* Server operations */
 		void	_register();
@@ -95,12 +101,15 @@ static enumMap _initMap() {
 	aMap["NOTICE"] =	NOTICE;
 	aMap["NAMES"] =		NAMES;
 	aMap["LIST"] =		LIST;
+	aMap["INVITE"] =	INVITE;
 	aMap["PING"] =		PING;
 	aMap["PONG"] =		PONG;
 	aMap["PASS"] =		PASS;
 	aMap["MODE"] =		MODE;
 	aMap["WHO"] =		WHO;
 	aMap["QUIT"] =		QUIT;
+	aMap["KICK"] =		KICK;
+	aMap["TOPIC"] =		TOPIC;
 	return aMap;
 };
 
