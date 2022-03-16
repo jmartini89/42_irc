@@ -81,7 +81,7 @@ void MessageHandler::_nickCmd()
 		std::string msg = defHeader + " " + "NICK" + " " + this->_message.parameters[1];
 		msg.replace(1, this->_client->getNick().size(), oldNick);
 		this->sendMsg(this->_client->getFdSocket(), msg);
-		this->_broadcastAllChannels(msg, true);
+		this->_broadcastAllMyChannels(msg, true);
 	}
 }
 
@@ -127,14 +127,14 @@ void MessageHandler::_joinCmd() {
 		if (channel->getClientMap()->count(this->_client)) return;
 
 		if (!channel->join(this->_client, op, keyVector[it]))
-			return this->serverReply(ERR_BADCHANNELKEY);
+			return this->serverReply(ERR_BADCHANNELKEY, "", channel->getName());
 
 		std::string msg = defHeader
 			+ " " + this->_message.parameters[0]
 			+ " " + channel->getName();
 		this->_broadcastChannel(channel, msg, false);
 
-		this->_serverReplyName(channel); // TO BE TESTED
+		this->_serverReplyName(channel);
 	}
 }
 
@@ -257,7 +257,7 @@ void MessageHandler::_quitCmd() {
 	std::string msg = header + text;
 
 	this->sendMsg(this->_client->getFdSocket(), msg);
-	this->_broadcastAllChannels(msg, true);
+	this->_broadcastAllMyChannels(msg, true);
 
 	for (std::vector<Channel *>::iterator it = this->_server->getChannelVector()->begin();
 		it != this->_server->getChannelVector()->end();)
@@ -287,7 +287,7 @@ void MessageHandler::_inviteCmd()
 	if (!imInChannel)
 		return (serverReply(ERR_NOTONCHANNEL));
 	
-	bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+	bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
 	if (!imOperator)
 		return (serverReply(ERR_CHANOPRIVSNEEDED));
 
@@ -334,7 +334,7 @@ void MessageHandler::_kickCmd()
 			continue;
 		}
 
-		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
 		if (!imOperator)
 		{
 			serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
@@ -384,7 +384,7 @@ void MessageHandler::_topicCmd()
 
 	if (this->_message.parameters.size() == 3)
 	{
-		bool imOperator = (*channel->getClientMap()->find(this->_client)).second;
+		bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
 		if (!imOperator)
 			return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
 
@@ -425,7 +425,7 @@ void MessageHandler::_broadcastChannel(Channel * channel, std::string message, b
 			this->sendMsg(it->first->getFdSocket(), message);
 }
 
-void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) {
+void MessageHandler::_broadcastAllMyChannels(std::string message, bool excludeMe) {
 
 	std::set<Client *> clientSet;
 
@@ -438,9 +438,9 @@ void MessageHandler::_broadcastAllChannels(std::string message, bool excludeMe) 
 			{
 				if (!(it->first == this->_client) || !excludeMe)
 				{
-					std::pair<std::set<Client *>::iterator,bool> ret;
-					ret = clientSet.insert((*it).first);
-					if (ret.second == true) this->sendMsg(it->first->getFdSocket(), message);
+					std::pair<std::set<Client *>::iterator,bool> ret = clientSet.insert((*it).first);
+					if (ret.second == true)
+						this->sendMsg(it->first->getFdSocket(), message);
 				}
 			}
 		}
@@ -451,7 +451,7 @@ void MessageHandler::_serverReplyName(Channel * channel) {
 
 	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
 		std::string nick = it->first->getNick();
-		if (it->second ) nick = "@" + nick;
+		if (channel->isOperator(it->first)) nick = "@" + nick;
 		serverReply(RPL_NAMREPLY, nick, channel->getName());
 	}
 	serverReply(RPL_ENDOFNAMES);

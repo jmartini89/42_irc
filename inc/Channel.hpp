@@ -3,7 +3,7 @@
 
 #include "Client.hpp"
 
-typedef std::map<Client *, bool> clientMap;
+typedef std::map<Client *, std::string> clientMap;
 
 class Server;
 
@@ -21,16 +21,20 @@ class Channel
 
 		/* Getters */
 		clientMap *	getClientMap();
-		bool		isProtected() const;
 		bool		checkKey(std::string key) const;
 		bool		isEmpty() const;
 		std::string	getName() const;
 		std::string	getTopic() const;
 		void		setTopic(std::string topic);
+		// GET MODE METHODS
+		bool		isProtected() const; // TO MODIFY
+		bool		isOperator(Client * client) const;
 
 	private:
 		Channel() {};
+		bool		_isMode(Client * client, char c) const;
 
+		std::string		_modes;
 		std::string		_name;
 		std::string		_key;
 		std::string		_topic;
