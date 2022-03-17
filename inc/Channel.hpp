@@ -19,22 +19,43 @@ class Channel
 		bool	join(Client * client, bool op, std::string key);
 		void	part(Client * client);
 
-		/* Getters */
+		/* Getters Setters */
 		clientMap *	getClientMap();
 		bool		checkKey(std::string key) const;
 		bool		isEmpty() const;
 		std::string	getName() const;
 		std::string	getTopic() const;
+		std::string getKey() const;
+		std::string	getMode() const;
+
 		void		setTopic(std::string topic);
-		// GET MODE METHODS
-		bool		isProtected() const; // TO MODIFY
-		bool		isOperator(Client * client) const;
+
+		/* Modes Channel */
+		bool		isProtected() const;
+		bool		isModerated() const;	// privmsgCmd + hasVoicePriv
+		bool		isTopicLocked() const;	// topicCmd
+		bool		isNoMsgOutside() const;	// privmsgCmd
+		bool		isLimited() const;		// joinCmd
+		bool		isSecret() const;		// listCmd
+
+		bool		setMode(char c, bool toogle);
+
+		/* Modes User */
+		bool		hasOperPriv(Client * client) const;
+		bool		hasVoicePriv(Client * client) const;
+
+		void		setOperPriv(Client * client);
+		void		setVoicePriv(Client * client);
 
 	private:
 		Channel() {};
-		bool		_isMode(Client * client, char c) const;
+		bool		_hasPriv(Client * client, char c) const;
+		bool		_isMode(char c) const;
+
+		void		_setPriv(Client * client, char c);
 
 		std::string		_modes;
+		size_t			_usersLimit;
 		std::string		_name;
 		std::string		_key;
 		std::string		_topic;

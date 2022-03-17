@@ -36,7 +36,7 @@ bool Channel::join(Client * client, bool op, std::string key)
 void Channel::part(Client * client) { this->_clientsChannel.erase(client); }
 
 
-/* Getters */
+/* Getters Setters */
 
 clientMap * Channel::getClientMap()  { return &this->_clientsChannel; }
 
@@ -48,25 +48,71 @@ std::string	Channel::getName() const { return this->_name; }
 
 std::string	Channel::getTopic() const { return this->_topic; }
 
+std::string	Channel::getKey() const { return this->_key; }
 
-/* Modes */
+std::string	Channel::getMode() const { return "+" + this->_modes; }
 
-bool Channel::_isMode(Client * client, char c) const
+
+void Channel::setTopic(std::string topic) { this->_topic = topic; }
+
+/* Modes Channel */
+
+bool Channel::isProtected() const { return !this->_key.empty(); }
+
+bool Channel::isModerated() const { return this->_isMode('m'); }
+
+bool Channel::isTopicLocked() const { return this->_isMode('t'); }
+
+bool Channel::isNoMsgOutside() const { return this->_isMode('n'); }
+
+bool Channel::isLimited() const { return this->_isMode('l'); }
+
+bool Channel::isSecret() const { return this->_isMode('s'); }
+
+bool Channel::setMode(char c, bool toogle)
 {
-	if (this->_clientsChannel.find(client) != this->_clientsChannel.end())
+	// check if c is server-implemented, return false otherwise
+	// switch case char/function
+}
+
+
+/* Modes User */
+
+bool Channel::hasOperPriv(Client * client) const { return this->_hasPriv(client, 'o'); }
+
+bool Channel::hasVoicePriv(Client * client) const { return this->_hasPriv(client, 'v'); }
+
+
+/* Private */
+
+bool Channel::_isMode(char c) const
+{
+	if (this->_modes.find(c) != std::string::npos)
+			return true;
+	return false;
+}
+
+bool Channel::_hasPriv(Client * client, char c) const
+{
+	clientMap::const_iterator it = this->_clientsChannel.find(client);
+	if (it != this->_clientsChannel.end())
 	{
-		if ((*this->_clientsChannel.find(client)).second.find(c) != std::string::npos)
+		if (it->second.find(c) != std::string::npos)
 			return true;
 		return false;
 	}
 	return false;
 }
 
-bool Channel::isProtected() const { return !this->_key.empty(); }
-
-bool Channel::isOperator(Client * client) const { return this->_isMode(client, 'o'); }
-
-
-/* Setters */
-
-void Channel::setTopic(std::string topic) { this->_topic = topic; }
+void Channel::_setPriv(Client * client, char c)
+{
+	clientMap::iterator it = this->_clientsChannel.find(client);
+	if (it != this->_clientsChannel.end())
+	{
+		if (it->second.find(c) != std::string::npos)
+			return;
+		it->second += c;
+	}
+	else
+		std::cerr << "setOperPriv: client not found" << std::endl;
+}

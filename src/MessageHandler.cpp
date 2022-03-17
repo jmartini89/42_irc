@@ -38,7 +38,7 @@ void MessageHandler::handleMsg()
 		case PING:		_pongCmd(); break;
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
-		case WHO:		break; // TODO ?
+		case WHO:		break;
 		case MODE:		break; // TODO
 		case QUIT:		_quitCmd(); break;
 		case KICK:		_kickCmd(); break;
@@ -243,6 +243,22 @@ void MessageHandler::_pongCmd() {
 	this->sendMsg(this->_client->getFdSocket(), reply);
 }
 
+void MessageHandler::_modeCmd()
+{
+	if (this->_message.parameters.size() < 2)
+		serverReply(ERR_NEEDMOREPARAMS);
+
+	Channel * channel = this->_server->findChannel(this->_message.parameters[2]);
+	if (!channel)
+		return serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[2]);
+
+	if (this->_message.parameters.size() == 2)
+		serverReply(RPL_CHANNELMODEIS, "", channel->getName());
+
+	// cycle letters, execute each letter, answer letter doesn't exist if exec returns false
+	// keep 2nd j cycle for possible parameters (example: k & l), ofc only if parameters.size()
+}
+
 void MessageHandler::_quitCmd() {
 
 	std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
@@ -287,7 +303,7 @@ void MessageHandler::_inviteCmd()
 	if (!imInChannel)
 		return (serverReply(ERR_NOTONCHANNEL));
 	
-	bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
+	bool imOperator = channel->hasOperPriv(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
 	if (!imOperator)
 		return (serverReply(ERR_CHANOPRIVSNEEDED));
 
@@ -334,7 +350,7 @@ void MessageHandler::_kickCmd()
 			continue;
 		}
 
-		bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
+		bool imOperator = channel->hasOperPriv(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
 		if (!imOperator)
 		{
 			serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
@@ -384,7 +400,7 @@ void MessageHandler::_topicCmd()
 
 	if (this->_message.parameters.size() == 3)
 	{
-		bool imOperator = channel->isOperator(this->_client);
+		bool imOperator = channel->hasOperPriv(this->_client);
 		if (!imOperator)
 			return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
 
@@ -452,7 +468,7 @@ void MessageHandler::_serverReplyName(Channel * channel) {
 
 	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
 		std::string nick = it->first->getNick();
-		if (channel->isOperator(it->first)) nick = "@" + nick;
+		if (channel->hasOperPriv(it->first)) nick = "@" + nick;
 		serverReply(RPL_NAMREPLY, nick, channel->getName());
 	}
 	serverReply(RPL_ENDOFNAMES);
@@ -486,6 +502,8 @@ void MessageHandler::serverReply(int code, std::string target, std::string chann
 		itoa << channelObj->getClientMap()->size();
 		MessageParser::replace(reply, "<topic>", channelObj->getTopic());
 		MessageParser::replace(reply, "<# visible>", itoa.str());
+		MessageParser::replace(reply, "<mode>", channelObj->getMode());
+		MessageParser::replace(reply, "<mode params>", channelObj->getKey()); // special method etc
 	}
 
 	// Client *targetClient = _findClient(target);

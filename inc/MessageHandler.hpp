@@ -78,6 +78,7 @@ class MessageHandler
 		void	_listCmd();
 		void	_inviteCmd();
 		void	_pongCmd();
+		void	_modeCmd();
 		void	_quitCmd();
 		void	_kickCmd();
 		void	_topicCmd();
