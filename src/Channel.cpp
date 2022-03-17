@@ -3,7 +3,8 @@
 
 Channel::Channel(std::string name, std::string key) : _name(name), _key(key)
 {
-	this->_modes = CHANNEL_MODES;
+	this->_modes = "otn";
+	if (!this->_key.empty()) this->_modes += "k";
 
 	this->_topic = "No topic set";
 	std::cerr << "New channel created: " << name << " " << key << std::endl;
@@ -61,9 +62,10 @@ bool Channel::_isMode(Client * client, char c) const
 	return false;
 }
 
-bool Channel::isProtected() const { return !this->_key.empty(); } // TO MODIFY?
+bool Channel::isProtected() const { return !this->_key.empty(); }
 
 bool Channel::isOperator(Client * client) const { return this->_isMode(client, 'o'); }
+
 
 /* Setters */
 

@@ -384,10 +384,11 @@ void MessageHandler::_topicCmd()
 
 	if (this->_message.parameters.size() == 3)
 	{
-		bool imOperator = channel->isOperator(this->_client); //(*channel->getClientMap()->find(this->_client)).second;
+		bool imOperator = channel->isOperator(this->_client);
 		if (!imOperator)
 			return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
 
+		if (this->_message.parameters[2].front() == ':') this->_message.parameters[2].erase(0, 1);
 		channel->setTopic(this->_message.parameters[2]);
 	}
 
