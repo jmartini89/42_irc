@@ -50,12 +50,14 @@ std::string	Channel::getTopic() const { return this->_topic; }
 
 std::string	Channel::getKey() const { return this->_key; }
 
-std::string	Channel::getMode() const { return "+" + this->_modes; }
+size_t Channel::getLimit() const { return this->_usersLimit; }
 
+std::string	Channel::getMode() const { return this->_modes; }
 
 void Channel::setTopic(std::string topic) { this->_topic = topic; }
 
-/* Modes Channel */
+
+/* Modes Channel - Getters */
 
 bool Channel::isProtected() const { return !this->_key.empty(); }
 
@@ -69,10 +71,68 @@ bool Channel::isLimited() const { return this->_isMode('l'); }
 
 bool Channel::isSecret() const { return this->_isMode('s'); }
 
-bool Channel::setMode(char c, bool toogle)
+std::string Channel::getParams() const
 {
-	// check if c is server-implemented, return false otherwise
-	// switch case char/function
+	std::string msg;
+	for (int i = 0; i < this->_modes.size(); i++)
+	{
+		if (this->_modes[i] == 'k') msg += this->getKey() + " ";
+		if (this->_modes[i] == 'l') msg += MessageParser::itoaCustom(this->_usersLimit) + " ";
+	}
+	return msg;
+}
+
+/* Modes Channel - Setters */
+
+bool Channel::setMode(char c, bool toggle, std::string param)
+{
+	switch (c)
+	{
+		case 'l': this->setLimited(toggle, param); break;
+		case 'k': this->setProtected(toggle, param); break;
+		// case 'o': this->toggleMode(c, toggle); break;
+		case 't': this->toggleMode(c, toggle); break;
+		case 'm': this->toggleMode(c, toggle); break;
+		// case 'v': this->toggleMode(c, toggle); break;
+		case 'n': this->toggleMode(c, toggle); break;
+		case 's': this->toggleMode(c, toggle); break;
+		default: return false;
+	}
+	return true;
+}
+
+void Channel::toggleMode(char c, bool toggle)
+{
+	std::string character(1, c);
+	if (toggle)
+	{
+		if (!this->_isMode(c))
+			this->_modes += c;
+	}
+	else
+		MessageParser::replace(this->_modes, character, "");
+}
+
+void Channel::setProtected(bool toggle, std::string param)
+{
+	if (toggle)
+	{
+		this->_key = param;
+		if (!this->_isMode('k'))
+			this->_modes += "k";
+	}
+	else
+	{
+		if (this->checkKey(param))
+			MessageParser::replace(this->_modes, "k", "");
+	}
+}
+
+void Channel::setLimited(bool toggle, std::string param)
+{
+	if (toggle)
+		this->_usersLimit = std::atoi(param.c_str());
+	this->toggleMode('l', toggle);
 }
 
 
@@ -88,7 +148,7 @@ bool Channel::hasVoicePriv(Client * client) const { return this->_hasPriv(client
 bool Channel::_isMode(char c) const
 {
 	if (this->_modes.find(c) != std::string::npos)
-			return true;
+		return true;
 	return false;
 }
 

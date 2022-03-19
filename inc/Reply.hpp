@@ -74,7 +74,8 @@ class Reply
 			case RPL_WELCOME:				return ":Welcome to the Internet Relay Network <nick>!<user>@<host>";
 			case RPL_YOURHOST:				return ":Your host is <servername>, running version <version>";
 			case RPL_CREATED:				return ":This server was created <date>";
-			case RPL_MYINFO:				return "<servername> <version> <available user modes> <available channel modes>";
+			case RPL_MYINFO:				return "<servername> <version> <available user modes> <available channel modes> <channel modes with a parameter>";
+			// case RPL_MYINFO:				return "<servername> <version> <available user modes> <available channel modes>";
 			// case RPL_BOUNCE:				return "Try server <server name>, port <port number>";
 			// case RPL_TRACELINK:			return "Link <version & debug level> <destination> <next server> V<protocol version> <link uptime in seconds> <backstream sendq> <upstream sendq>";
 			// case RPL_TRACECONNECTING:	return "Try. <class> <server>";
@@ -195,7 +196,8 @@ class Reply
 			// case ERR_YOUWILLBEBANNED;
 			// case ERR_KEYSET:				return "<channel> :Channel key already set";
 			// case ERR_CHANNELISFULL:		return "<channel> :Cannot join channel (+l)";
-			case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
+			case ERR_UNKNOWNMODE:			return ":unknown mode char to me for <channel>";
+			// case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
 			// case ERR_BANNEDFROMCHAN:		return "<channel> :Cannot join channel (+b)";
 			case ERR_BADCHANNELKEY:			return "<channel> :Cannot join channel (+k)";

@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <map>
 #include <set>
-#include <sstream>
 
 #define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
 

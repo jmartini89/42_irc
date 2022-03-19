@@ -26,26 +26,33 @@ class Channel
 		std::string	getName() const;
 		std::string	getTopic() const;
 		std::string getKey() const;
+		size_t		getLimit() const;
 		std::string	getMode() const;
 
 		void		setTopic(std::string topic);
 
-		/* Modes Channel */
+		/* Modes Channel - Getters */
 		bool		isProtected() const;
 		bool		isModerated() const;	// privmsgCmd + hasVoicePriv
 		bool		isTopicLocked() const;	// topicCmd
 		bool		isNoMsgOutside() const;	// privmsgCmd
 		bool		isLimited() const;		// joinCmd
 		bool		isSecret() const;		// listCmd
+		std::string	getParams() const;
 
-		bool		setMode(char c, bool toogle);
+		/* Modes Channel - Setters */
+		bool		setMode(char c, bool toggle, std::string param);
+		void		toggleMode(char c, bool toggle);
+
+		void		setProtected(bool toggle, std::string param);
+		void		setLimited(bool toggle, std::string param);
 
 		/* Modes User */
 		bool		hasOperPriv(Client * client) const;
 		bool		hasVoicePriv(Client * client) const;
 
-		void		setOperPriv(Client * client);
-		void		setVoicePriv(Client * client);
+		// void		setOperPriv(Client * client);
+		// void		setVoicePriv(Client * client);
 
 	private:
 		Channel() {};
