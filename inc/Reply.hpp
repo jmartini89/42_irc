@@ -52,6 +52,7 @@
 #define ERR_NEEDMOREPARAMS		461
 #define ERR_ALREADYREGISTRED	462
 #define ERR_PASSWDMISMATCH		464
+#define ERR_CHANNELISFULL		471
 #define ERR_UNKNOWNMODE			472
 #define ERR_BADCHANNELKEY		475
 #define ERR_BADCHANMASK			476
@@ -195,7 +196,7 @@ class Reply
 			// case ERR_YOUREBANNEDCREEP:	return ":You are banned from this server";
 			// case ERR_YOUWILLBEBANNED;
 			// case ERR_KEYSET:				return "<channel> :Channel key already set";
-			// case ERR_CHANNELISFULL:		return "<channel> :Cannot join channel (+l)";
+			case ERR_CHANNELISFULL:			return "<channel> :Cannot join channel (+l)";
 			case ERR_UNKNOWNMODE:			return ":unknown mode char to me for <channel>";
 			// case ERR_UNKNOWNMODE:			return "<char> :is unknown mode char to me for <channel>";
 			// case ERR_INVITEONLYCHAN:		return "<channel> :Cannot join channel (+i)";
