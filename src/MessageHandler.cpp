@@ -259,16 +259,14 @@ void MessageHandler::_pongCmd()
 
 void MessageHandler::_modeCmd()
 {
-	size_t paramSize = this->_message.parameters.size();
-
-	if (paramSize < 2)
+	if (this->_message.parameters.size() < 2)
 		return serverReply(ERR_NEEDMOREPARAMS);
 
 	Channel * channel = this->_server->findChannel(this->_message.parameters[1]);
 	if (!channel)
 		return serverReply(ERR_NOSUCHCHANNEL, "", this->_message.parameters[1]);
 
-	if (paramSize == 2)
+	if (this->_message.parameters.size() == 2)
 		return serverReply(RPL_CHANNELMODEIS, "", channel->getName());
 
 	if (!channel->hasOperPriv(this->_client))
@@ -288,30 +286,50 @@ void MessageHandler::_modeCmd()
 			default:	break;
 		}
 
-		 /* !!! TODO !!! */
-		// operator | voice
-		if (this->_message.parameters[2][i] == 'o' || this->_message.parameters[2][i] == 'v')
-			;
-
-		// key && limit
+		// key, limit, operator, voice
 		if (CHANNEL_MODES_PARAM.find(this->_message.parameters[2][i]) != std::string::npos)
 		{
-			// more invidual checks are (should be, lol) needed
-			if ((this->_message.parameters[2][i] == 'k' || (this->_message.parameters[2][i] == 'l' && toggle)) && j >= paramSize)
+			// l requires parameter only for true toggle
+			if ((this->_message.parameters[2][i] != 'l' || toggle) && j >= this->_message.parameters.size())
 			{
 				serverReply(ERR_NEEDMOREPARAMS);
 				continue;
 			}
+
 			param = this->_message.parameters[j];
 			j++;
+
+			// oper & voice dedicated
+			if (this->_message.parameters[2][i] == 'o' || this->_message.parameters[2][i] == 'v')
+			{
+				Client *targetClient = this->_server->findClient(param);
+				if (!targetClient)
+				{
+					serverReply(ERR_NOSUCHNICK, param);
+					continue;
+				}
+				if (!channel->getClientMap()->count(targetClient))
+				{
+					serverReply(ERR_USERNOTINCHANNEL, param, channel->getName());
+					continue;
+				}
+
+				// broadcast channel for op/voice change (a bit floody but fine)
+				std::string sign = (toggle ? "+" : "-");
+				std::string msg = defHeader 
+								+ " MODE " + channel->getName()
+								+ " " + sign + this->_message.parameters[2][i]
+								+ " " + param;
+				this->_broadcastChannel(channel, msg, false);
+			}
 		}
 
 		if (!channel->setMode(this->_message.parameters[2][i], toggle, param))
 			serverReply(ERR_UNKNOWNMODE, "", channel->getName());
 	}
 
-	// broadcast changes
 	/* OPTIMIZE THIS */
+	// broadcast channel if prevMode != currentMode
 	if (prevMode.compare(channel->getMode()))
 	{
 		std::string msgAdd = "+";

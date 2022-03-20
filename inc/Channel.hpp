@@ -19,7 +19,7 @@ class Channel
 		bool	join(Client * client, bool op, std::string key);
 		void	part(Client * client);
 
-		/* Getters Setters */
+		/* Channel Properties */
 		clientMap *	getClientMap();
 		bool		checkKey(std::string key) const;
 		bool		isEmpty() const;
@@ -29,9 +29,7 @@ class Channel
 		size_t		getLimit() const;
 		std::string	getMode() const;
 
-		void		setTopic(std::string topic);
-
-		/* Modes Channel - Getters */
+		/* Modes */
 		bool		isProtected() const;
 		bool		isModerated() const;
 		bool		isTopicLocked() const;
@@ -39,25 +37,23 @@ class Channel
 		bool		isLimited() const;
 		bool		isSecret() const;
 		std::string	getParams() const;
-
-		/* Modes Channel - Setters */
-		bool		setMode(char c, bool toggle, std::string param);
-		void		toggleMode(char c, bool toggle);
-		void		setProtected(bool toggle, std::string param);
-		void		setLimited(bool toggle, std::string param);
-
-		/* Modes User */
 		bool		hasOperPriv(Client * client) const;
 		bool		hasVoicePriv(Client * client) const;
-		// void		setOperPriv(Client * client);
-		// void		setVoicePriv(Client * client);
+
+		bool		setMode(char c, bool toggle, std::string param);
+
+		void		setTopic(std::string topic);
 
 	private:
 		Channel() {};
 		bool		_hasPriv(Client * client, char c) const;
 		bool		_isMode(char c) const;
 
-		void		_setPriv(Client * client, char c);
+		/* Modes - Setters */
+		void		_toggleMode(char c, bool toggle);
+		void		_setProtected(bool toggle, std::string param);
+		void		_setLimited(bool toggle, std::string param);
+		void		_setPriv(char c, bool toggle, std::string param);
 
 		std::string		_modes;
 		size_t			_usersLimit;
