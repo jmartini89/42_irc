@@ -1,8 +1,8 @@
-NAME = irc
+NAME = ircserv
 CC = clang++
 CFLAGS = $(CSTD) $(CWARN) $(HEADERS)
 CSTD = -std=c++98
-CWARN = #-Wall -Werror -Wextra
+CWARN = -Wall -Werror -Wextra
 HEADERS = -I./inc
 DEBUG = -g
 DEBUG_ADDR = -fsanitize=address

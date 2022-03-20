@@ -71,6 +71,7 @@ class Server
 		void	_messageHandler(int eventFd);
 
 		void	_debugMsgList(std::list<Message> msgList, int eventFd);
+		void	_startupMsg();
 };
 
 #endif

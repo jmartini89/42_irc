@@ -42,6 +42,8 @@ void MessageHandler::handleMsg()
 		case QUIT:		_quitCmd(); break;
 		case KICK:		_kickCmd(); break;
 		case TOPIC:		_topicCmd(); break;
+		case OPER:		_operCmd(); break;
+		case KILL:		_killCmd(); break;
 		default:		serverReply(ERR_UNKNOWNCOMMAND);
 	}
 }
@@ -272,7 +274,7 @@ void MessageHandler::_modeCmd()
 
 	std::string oldMode = channel->getMode();
 	bool toggle = true;
-	for (int i = 0, j = 3; i < this->_message.parameters[2].size(); i++)
+	for (size_t i = 0, j = 3; i < this->_message.parameters[2].size(); i++)
 	{
 		std::string param;
 
@@ -357,11 +359,6 @@ void MessageHandler::_modeCmd()
 
 void MessageHandler::_quitCmd()
 {
-	std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
-
-	close(this->_client->getFdSocket());
-	this->_client->setFdSocket(-1);
-
 	std::string header = defHeader
 						+ " " + this->_message.parameters[0] + " ";
 	std::string text;
@@ -379,6 +376,11 @@ void MessageHandler::_quitCmd()
 			it = this->_server->removeChannel(*it);
 		else it++;
 	}
+
+	std::cerr << "Client " << this->_client->getHostname() << " FD " << this->_client->getFdSocket() << " disconnected" << std::endl;
+
+	close(this->_client->getFdSocket());
+	this->_client->setFdSocket(-1);
 }
 
 
@@ -453,7 +455,7 @@ void MessageHandler::_kickCmd()
 			continue;
 		}
 
-		for (int j = 0; j < usersName.size(); j++)
+		for (size_t j = 0; j < usersName.size(); j++)
 		{
 			/*
 			* there MUST be either one channel parameter and multiple user parameter,
@@ -512,6 +514,37 @@ void MessageHandler::_topicCmd()
 	this->_broadcastChannel(channel, msg, false);
 }
 
+void MessageHandler::_operCmd()
+{
+	if (this->_message.parameters.size() < 3)
+		return serverReply(ERR_NEEDMOREPARAMS);
+
+	if (this->_message.parameters[1] != OPNAME || this->_message.parameters[2] != OPPASS)
+		return serverReply(ERR_PASSWDMISMATCH);
+
+	this->_client->setServOp();
+	serverReply(RPL_YOUREOPER);
+}
+
+void MessageHandler::_killCmd()
+{
+	if (!this->_client->isServOp())
+		return serverReply(ERR_NOPRIVILEGES);
+
+	if (this->_message.parameters.size() < 2)
+		return serverReply(ERR_NEEDMOREPARAMS);
+
+	Client * target = this->_server->findClient(this->_message.parameters[1]);
+	if (!target || !target->isRegistered())
+		return serverReply(ERR_NOSUCHNICK, this->_message.parameters[1]);
+
+	MessageHandler msgHandler(this->_server->findClient(target->getNick()), this->_server);
+	struct Message msg;
+	msg.cmd = QUIT;
+	msg.parameters.push_back("QUIT");
+	msgHandler(msg);
+}
+
 
 /* Server Operations */
 
@@ -526,7 +559,7 @@ void MessageHandler::_register()
 		return;
 	}
 	this->_client->setRegistered(true);
-	return this->_welcomeReply();
+	this->_welcomeReply();
 }
 
 void MessageHandler::_welcomeReply()

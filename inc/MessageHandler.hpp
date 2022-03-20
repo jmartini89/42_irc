@@ -31,7 +31,9 @@ enum Commands {
 	WHOWAS,
 	QUIT,
 	KICK,
-	TOPIC
+	TOPIC,
+	OPER,
+	KILL
 };
 
 struct Message 
@@ -83,6 +85,8 @@ class MessageHandler
 		void	_quitCmd();
 		void	_kickCmd();
 		void	_topicCmd();
+		void	_operCmd();
+		void	_killCmd();
 
 		/* Server operations */
 		void	_register();
@@ -114,6 +118,8 @@ static enumMap _initMap() {
 	aMap["QUIT"] =		QUIT;
 	aMap["KICK"] =		KICK;
 	aMap["TOPIC"] =		TOPIC;
+	aMap["OPER"] =		OPER;
+	aMap["KILL"] =		KILL;
 	return aMap;
 };
 

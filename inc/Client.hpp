@@ -22,6 +22,7 @@ class Client
 		std::string			_user;
 		std::string			_realName;
 		bool				_allowed;
+		bool				_servOp;
 
 	public:
 		Client();
@@ -40,6 +41,7 @@ class Client
 		bool				isUser() const;
 		bool				isConnected() const;
 		bool				isAllowed() const;
+		bool				isServOp() const;
 
 		std::string			getNick() const;
 		std::string			getUser() const;
@@ -56,6 +58,7 @@ class Client
 		void				setRegistered(bool state);
 		void				setHostname(char * hostname);
 		void				setAllowed(bool state);
+		void				setServOp();
 
 		void				setNick(std::string nick);
 		void				setUser(std::string user);

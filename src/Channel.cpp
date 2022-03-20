@@ -74,7 +74,7 @@ bool Channel::isSecret() const { return this->_isMode('s'); }
 std::string Channel::getParams() const
 {
 	std::string msg;
-	for (int i = 0; i < this->_modes.size(); i++)
+	for (size_t i = 0; i < this->_modes.size(); i++)
 	{
 		if (this->_modes[i] == 'k') msg += this->getKey() + " ";
 		if (this->_modes[i] == 'l') msg += MessageParser::itoaCustom(this->_usersLimit) + " ";

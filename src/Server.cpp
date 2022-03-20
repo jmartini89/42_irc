@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
-Server::Server(const unsigned int port, std::string password)
-: _password(password) {
+Server::Server(const unsigned int port, std::string password) : _password(password)
+{
 
 	std::time_t now = std::time(nullptr);
 	this->_creationDate = std::asctime(std::localtime(&now));
@@ -28,8 +28,9 @@ Server::Server(const unsigned int port, std::string password)
 		throw std::runtime_error("bind function failed");
 }
 
-Server::~Server() {
-	std::cerr << std::endl << "QUIT" << std::endl;
+Server::~Server()
+{
+	std::cerr << std::endl << IRC_NAME << " " << VERSION << " quitting..." << std::endl;
 	close(this->_fdListen);
 	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		delete this->_clientVector[i];
@@ -41,6 +42,8 @@ void Server::run()
 
 	this->_kQueue = kqueue();
 	this->_setKevents();
+
+	this->_startupMsg();
 
 	while(true)
 	{
@@ -226,4 +229,12 @@ void Server::_debugMsgList(std::list<Message> msgList, int eventFd) {
 			os << (*m).parameters[i] << " ";
 		std::cout << os.str() << std::endl;
 	}
+}
+
+void Server::_startupMsg()
+{
+	std::cerr << IRC_NAME << " " << VERSION
+	<< " started at " << this->getCreationDate()
+	<< " on port " << ntohs(this->_address.sin_port)
+	<< std::endl;
 }
