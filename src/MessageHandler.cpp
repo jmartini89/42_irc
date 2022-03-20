@@ -36,7 +36,9 @@ void MessageHandler::handleMsg()
 		case PONG:		break;
 		case PASS:		_passCmd(); break;
 		case WHO:		break;
-		case MODE:		_modeCmd(); break; // wip
+		case WHOIS:		break; // serverReply objs overhaul required
+		case WHOWAS:	break;
+		case MODE:		_modeCmd(); break;
 		case QUIT:		_quitCmd(); break;
 		case KICK:		_kickCmd(); break;
 		case TOPIC:		_topicCmd(); break;
@@ -251,11 +253,7 @@ void MessageHandler::_listCmd()
 	serverReply(RPL_LISTEND);
 }
 
-void MessageHandler::_pongCmd()
-{
-	std::string reply = "PONG";
-	this->sendMsg(this->_client->getFdSocket(), reply);
-}
+void MessageHandler::_pongCmd() { this->sendMsg(this->_client->getFdSocket(), "PONG"); }
 
 void MessageHandler::_modeCmd()
 {
@@ -272,7 +270,7 @@ void MessageHandler::_modeCmd()
 	if (!channel->hasOperPriv(this->_client))
 		return serverReply(ERR_CHANOPRIVSNEEDED, "", channel->getName());
 
-	std::string prevMode = channel->getMode();
+	std::string oldMode = channel->getMode();
 	bool toggle = true;
 	for (int i = 0, j = 3; i < this->_message.parameters[2].size(); i++)
 	{
@@ -328,34 +326,31 @@ void MessageHandler::_modeCmd()
 			serverReply(ERR_UNKNOWNMODE, "", channel->getName());
 	}
 
-	/* OPTIMIZE THIS */
-	// broadcast channel if prevMode != currentMode
-	if (prevMode.compare(channel->getMode()))
+	std::string newMode = channel->getMode();
+	if (oldMode != newMode)
 	{
 		std::string msgAdd = "+";
 		std::string msgRmv = "-";
-		std::string param;
+		std::string msgParam;
 
-		for (size_t i = 0; i < channel->getMode().size(); i++)
+		for (size_t i = 0; i < newMode.size(); i++)
 		{
-			if (prevMode.find(channel->getMode()[i]) == std::string::npos)
+			if (oldMode.find(newMode[i]) == std::string::npos)
 			{
-				msgAdd += channel->getMode()[i];
-				if (channel->getMode()[i] == 'k') param += " " + channel->getKey();
-				if (channel->getMode()[i] == 'l') param += " " + MessageParser::itoaCustom(channel->getLimit());
+				msgAdd += newMode[i];
+				if (newMode[i] == 'k')
+					msgParam += " " + channel->getKey();
+				if (newMode[i] == 'l')
+					msgParam += " " + MessageParser::itoaCustom(channel->getLimit());
 			}
 		}
-
-		for (size_t i = 0; i < prevMode.size(); i++)
-		{
-			if (channel->getMode().find(prevMode[i]) == std::string::npos)
-				msgRmv += prevMode[i];
-		}
+		for (size_t i = 0; i < oldMode.size(); i++)
+			if (newMode.find(oldMode[i]) == std::string::npos)
+				msgRmv += oldMode[i];
 
 		std::string msg = defHeader 
 						+ " MODE " + channel->getName()
-						+ " " + msgAdd + msgRmv + param;
-
+						+ " " + msgAdd + msgRmv + msgParam;
 		this->_broadcastChannel(channel, msg, false);
 	}
 }
@@ -573,7 +568,8 @@ void MessageHandler::_broadcastAllMyChannels(std::string message, bool excludeMe
 
 void MessageHandler::_serverReplyName(Channel * channel)
 {
-	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it) {
+	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
+	{
 		std::string nick = it->first->getNick();
 		if (channel->hasOperPriv(it->first)) nick = "@" + nick;
 		serverReply(RPL_NAMREPLY, nick, channel->getName());

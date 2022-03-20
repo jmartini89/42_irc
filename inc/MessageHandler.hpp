@@ -27,6 +27,8 @@ enum Commands {
 	PASS,
 	MODE,
 	WHO,
+	WHOIS,
+	WHOWAS,
 	QUIT,
 	KICK,
 	TOPIC
@@ -107,6 +109,8 @@ static enumMap _initMap() {
 	aMap["PASS"] =		PASS;
 	aMap["MODE"] =		MODE;
 	aMap["WHO"] =		WHO;
+	aMap["WHOIS"] =		WHOIS;
+	aMap["WHOWAS"] =	WHOWAS;
 	aMap["QUIT"] =		QUIT;
 	aMap["KICK"] =		KICK;
 	aMap["TOPIC"] =		TOPIC;
