@@ -124,6 +124,8 @@ std::vector<Channel *> * Server::getChannelVector() { return &this->_channelVect
 
 void Server::_setKevents()
 {
+	signal(SIGPIPE, SIG_IGN);
+
 	signal(SIGINT, SIG_IGN);
 	EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
@@ -216,7 +218,7 @@ void Server::_messageHandler(int eventFd)
 	}
 	else client->clearBuffer();
 
-	this->_debugMsgList(msgList, eventFd);
+	// this->_debugMsgList(msgList, eventFd);
 
 	MessageHandler msgHandler(client, this);
 	for_each(msgList.begin(), msgList.end(), msgHandler);

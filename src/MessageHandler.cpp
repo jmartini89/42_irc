@@ -290,14 +290,16 @@ void MessageHandler::_modeCmd()
 		if (CHANNEL_MODES_PARAM.find(this->_message.parameters[2][i]) != std::string::npos)
 		{
 			// l requires parameter only for true toggle
-			if ((this->_message.parameters[2][i] != 'l' || toggle) && j >= this->_message.parameters.size())
+			if (this->_message.parameters[2][i] != 'l' || toggle)
 			{
-				serverReply(ERR_NEEDMOREPARAMS);
-				continue;
+				if (j >= this->_message.parameters.size())
+				{
+					serverReply(ERR_NEEDMOREPARAMS);
+					continue;
+				}
+				param = this->_message.parameters.at(j);
+				j++;
 			}
-
-			param = this->_message.parameters[j];
-			j++;
 
 			// oper & voice dedicated
 			if (this->_message.parameters[2][i] == 'o' || this->_message.parameters[2][i] == 'v')
@@ -604,7 +606,10 @@ void MessageHandler::_serverReplyName(Channel * channel)
 	for (clientMap::iterator it = channel->getClientMap()->begin(); it != channel->getClientMap()->end(); ++it)
 	{
 		std::string nick = it->first->getNick();
-		if (channel->hasOperPriv(it->first)) nick = "@" + nick;
+		if (channel->hasOperPriv(it->first))
+			nick = "@" + nick;
+		else if (channel->hasVoicePriv(it->first))
+			nick = "+" + nick;
 		serverReply(RPL_NAMREPLY, nick, channel->getName());
 	}
 	serverReply(RPL_ENDOFNAMES);
