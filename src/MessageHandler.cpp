@@ -538,7 +538,7 @@ void MessageHandler::_killCmd()
 	if (!target || !target->isRegistered())
 		return serverReply(ERR_NOSUCHNICK, this->_message.parameters[1]);
 
-	MessageHandler msgHandler(this->_server->findClient(target->getNick()), this->_server);
+	MessageHandler msgHandler(target, this->_server);
 	struct Message msg;
 	msg.cmd = QUIT;
 	msg.parameters.push_back("QUIT");

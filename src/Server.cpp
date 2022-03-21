@@ -175,7 +175,10 @@ void Server::_addClient()
 
 void Server::_closeClient(int eventFd)
 {
-	MessageHandler msgHandler(this->findClient(eventFd), this);
+	Client * client = (this->findClient(eventFd));
+	if (!client) return;
+
+	MessageHandler msgHandler(client, this);
 	struct Message msg;
 	msg.cmd = QUIT;
 	msg.parameters.push_back("QUIT");
