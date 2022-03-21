@@ -535,7 +535,7 @@ void MessageHandler::_killCmd()
 		return serverReply(ERR_NEEDMOREPARAMS);
 
 	Client * target = this->_server->findClient(this->_message.parameters[1]);
-	if (!target || !target->isRegistered())
+	if (!target) // || !target->isRegistered() oper should be able to remove unregistered clients since they don't timeout
 		return serverReply(ERR_NOSUCHNICK, this->_message.parameters[1]);
 
 	MessageHandler msgHandler(target, this->_server);
