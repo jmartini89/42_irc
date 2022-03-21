@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
-Server::Server(const unsigned int port, std::string password)
-: _password(password) {
+Server::Server(const unsigned int port, std::string password) : _password(password)
+{
 
 	std::time_t now = std::time(nullptr);
 	this->_creationDate = std::asctime(std::localtime(&now));
@@ -28,8 +28,9 @@ Server::Server(const unsigned int port, std::string password)
 		throw std::runtime_error("bind function failed");
 }
 
-Server::~Server() {
-	std::cerr << std::endl << "QUIT" << std::endl;
+Server::~Server()
+{
+	std::cerr << std::endl << IRC_NAME << " " << VERSION << " quitting..." << std::endl;
 	close(this->_fdListen);
 	for (size_t i = 0; i < this->_clientVector.size(); i++)
 		delete this->_clientVector[i];
@@ -41,6 +42,8 @@ void Server::run()
 
 	this->_kQueue = kqueue();
 	this->_setKevents();
+
+	this->_startupMsg();
 
 	while(true)
 	{
@@ -121,6 +124,8 @@ std::vector<Channel *> * Server::getChannelVector() { return &this->_channelVect
 
 void Server::_setKevents()
 {
+	signal(SIGPIPE, SIG_IGN);
+
 	signal(SIGINT, SIG_IGN);
 	EV_SET(&this->_monitorEvent, SIGINT, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(this->_kQueue, &this->_monitorEvent, 1, NULL, 0, NULL) == -1)
@@ -172,7 +177,10 @@ void Server::_addClient()
 
 void Server::_closeClient(int eventFd)
 {
-	MessageHandler msgHandler(this->findClient(eventFd), this);
+	Client * client = (this->findClient(eventFd));
+	if (!client) return;
+
+	MessageHandler msgHandler(client, this);
 	struct Message msg;
 	msg.cmd = QUIT;
 	msg.parameters.push_back("QUIT");
@@ -226,4 +234,12 @@ void Server::_debugMsgList(std::list<Message> msgList, int eventFd) {
 			os << (*m).parameters[i] << " ";
 		std::cout << os.str() << std::endl;
 	}
+}
+
+void Server::_startupMsg()
+{
+	std::cerr << IRC_NAME << " " << VERSION
+	<< " started at " << this->getCreationDate()
+	<< " on port " << ntohs(this->_address.sin_port)
+	<< std::endl;
 }

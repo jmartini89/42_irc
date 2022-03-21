@@ -4,6 +4,7 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <sstream>
 
 #include "MessageHandler.hpp"
 #include "Defines.hpp"
@@ -98,6 +99,13 @@ class MessageParser
 				tmp += needle.length();
 			}
 			return pos;
+		}
+
+		static std::string itoaCustom(size_t n)
+		{
+			std::stringstream itoa;
+			itoa << n;
+			return itoa.str();
 		}
 };
 

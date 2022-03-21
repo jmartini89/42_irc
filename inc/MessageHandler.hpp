@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <map>
 #include <set>
-#include <sstream>
 
 #define defHeader ":" + this->_client->getNick() + "!" + this->_client->getUser() + "@" + this->_client->getHostname()
 
@@ -28,9 +27,13 @@ enum Commands {
 	PASS,
 	MODE,
 	WHO,
+	WHOIS,
+	WHOWAS,
 	QUIT,
 	KICK,
-	TOPIC
+	TOPIC,
+	OPER,
+	KILL
 };
 
 struct Message 
@@ -78,15 +81,18 @@ class MessageHandler
 		void	_listCmd();
 		void	_inviteCmd();
 		void	_pongCmd();
+		void	_modeCmd();
 		void	_quitCmd();
 		void	_kickCmd();
 		void	_topicCmd();
+		void	_operCmd();
+		void	_killCmd();
 
 		/* Server operations */
 		void	_register();
 		void	_welcomeReply();
 		void	_broadcastChannel(Channel * channel, std::string message, bool excludeMe);
-		void	_broadcastAllChannels(std::string message, bool excludeMe);
+		void	_broadcastAllMyChannels(std::string message, bool excludeMe);
 		void	_serverReplyName(Channel * channel);
 };
 
@@ -107,9 +113,13 @@ static enumMap _initMap() {
 	aMap["PASS"] =		PASS;
 	aMap["MODE"] =		MODE;
 	aMap["WHO"] =		WHO;
+	aMap["WHOIS"] =		WHOIS;
+	aMap["WHOWAS"] =	WHOWAS;
 	aMap["QUIT"] =		QUIT;
 	aMap["KICK"] =		KICK;
 	aMap["TOPIC"] =		TOPIC;
+	aMap["OPER"] =		OPER;
+	aMap["KILL"] =		KILL;
 	return aMap;
 };
 
