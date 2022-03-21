@@ -218,7 +218,7 @@ void Server::_messageHandler(int eventFd)
 	}
 	else client->clearBuffer();
 
-	// this->_debugMsgList(msgList, eventFd);
+	this->_debugMsgList(msgList, eventFd);
 
 	MessageHandler msgHandler(client, this);
 	for_each(msgList.begin(), msgList.end(), msgHandler);
