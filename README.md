@@ -22,7 +22,7 @@
 
 No, unfortunately
 
-We wanted to take advantage of a modern and smart kernel notification system that could handle UNIX-signals as well, avoiding messy workaround spaghetti-code
+We wanted to take advantage of a modern and smart kernel notification system that could handle UNIX-signals as well
 
 This led us to `GNU epoll` and `BSD kevent`. Both of these notification systems use non-POSIX compliant syscalls and therefore are not portable-friendly
 
